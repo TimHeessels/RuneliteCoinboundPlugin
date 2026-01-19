@@ -1,13 +1,16 @@
 package com.rogueliteplugin.unlocks;
 
 import com.rogueliteplugin.RoguelitePlugin;
-import com.rogueliteplugin.requirements.CombatLevelRequirement;
-import com.rogueliteplugin.requirements.RequiresUnlockRequirement;
+import com.rogueliteplugin.enforcement.ShopCategory;
+import com.rogueliteplugin.requirements.AppearRequirement;
+import com.rogueliteplugin.requirements.CombatRequirement;
+import com.rogueliteplugin.requirements.UnlockIDRequirement;
 import net.runelite.api.Skill;
 import net.runelite.api.SpriteID;
 import net.runelite.client.game.SkillIconManager;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class UnlockDefinitions {
@@ -20,12 +23,79 @@ public final class UnlockDefinitions {
             RoguelitePlugin plugin
     ) {
         registerSkills(registry, skillIconManager);
+        registerInventoryUnlocks(registry);
         registerClueTiers(registry);
         registerShops(registry, plugin);
         registerMinigames(registry, plugin);
         registerBosses(registry);
         registerTransport(registry);
         registerQuestTiers(registry);
+        registerCurrencies(registry);
+        registerEquipmentSlots(registry);
+        registerConsumables(registry);
+    }
+
+    private static void registerCurrencies(UnlockRegistry registry) {
+        registry.register(new CurrencyUnlock(
+                "CURRENCY_REROLL",
+                "Pack reroll Token",
+                IconLoader.load("currency/reroll.png"),
+                "Allows you to reroll the current pack options once.",
+                CurrencyUnlock.CurrencyType.REROLL,
+                1
+        ));
+
+        registry.register(new CurrencyUnlock(
+                "CURRENCY_SKIP",
+                "Challenge skip Token",
+                IconLoader.load("currency/skip.png"),
+                "Allows you to skip the current challenge.",
+                CurrencyUnlock.CurrencyType.SKIP,
+                1
+        ));
+    }
+
+    private static void registerConsumables(UnlockRegistry registry) {
+        registry.register(
+                new ConsumableUnlock(
+                        "Food",
+                        "Eat healing food",
+                        IconLoader.load("consumables/food.png"), //TODO: Change image
+                        "Allows you to eat food to restore HP."
+                )
+        );
+        registry.register(
+                new ConsumableUnlock(
+                        "Potions",
+                        "Drink potions",
+                        IconLoader.load("consumables/potions.png"), //TODO: Change image
+                        "Allows potions."
+                )
+        );
+    }
+
+    private static void registerTransport(UnlockRegistry registry) {
+        String[][] defs = {
+                {"FairyRings", "Fairy Rings"},
+                {"SpiritTrees", "Spirit Trees"},
+                {"TeleportTablets", "Teleport Tablets"},
+                {"MinigameTeleports", "Minigame Teleports"},
+                {"CharterShips", "Charter Ships"},
+                {"AgilityShortcuts", "Agility Shortcuts"},
+                {"BalloonTransport", "Balloon Transport"},
+                {"GnomeGliders", "Gnome Gliders"}
+        };
+
+        for (String[] def : defs) {
+            String id = def[0];
+            String name = def[1];
+            registry.register(new TransportUnlock(
+                    id,
+                    name,
+                    IconLoader.load("transport/" + id + ".png"),
+                    "Allows access to use " + name + " to move around."
+            ));
+        }
     }
 
     private static void registerSkills(
@@ -40,630 +110,279 @@ public final class UnlockDefinitions {
         }
     }
 
-    private static void registerQuestTiers(UnlockRegistry registry) {
-        registry.register(
-                new QuestUnlock(
-                        "Quests2002",
-                        "Quests released in 2002",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2002.",
-                        List.of()
-                )
-        );
+    private static void registerInventoryUnlocks(UnlockRegistry registry) {
+        Integer previousRow = null;
 
-        registry.register(
-                new QuestUnlock(
-                        "Quests2003",
-                        "Quests released in 2003",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2003.",
-                        List.of(new RequiresUnlockRequirement("Quests2002", registry))
-                )
-        );
+        for (int i = 0; i < 6; i++) {
+            List<AppearRequirement> reqs = new ArrayList<>();
 
-        registry.register(
-                new QuestUnlock(
-                        "Quests2004",
-                        "Quests released in 2004",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2004.",
-                        List.of(new RequiresUnlockRequirement("Quests2003", registry))
-                )
-        );
+            if (previousRow != null)
+                reqs.add(new UnlockIDRequirement("InventorySlots" + previousRow, registry));
 
-        registry.register(
-                new QuestUnlock(
-                        "Quests2005",
-                        "Quests released in 2005",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2005.",
-                        List.of(new RequiresUnlockRequirement("Quests2004", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2006",
-                        "Quests released in 2006",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2006.",
-                        List.of(new RequiresUnlockRequirement("Quests2005", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2007",
-                        "Quests released in 2007",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2007.",
-                        List.of(new RequiresUnlockRequirement("Quests2006", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2016",
-                        "Quests released in 2016",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2016.",
-                        List.of(new RequiresUnlockRequirement("Quests2007", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2017",
-                        "Quests released in 2017",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2017.",
-                        List.of(new RequiresUnlockRequirement("Quests2016", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2018",
-                        "Quests released in 2018",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2018.",
-                        List.of(new RequiresUnlockRequirement("Quests2017", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2019",
-                        "Quests released in 2019",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2019.",
-                        List.of(new RequiresUnlockRequirement("Quests2018", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2020",
-                        "Quests released in 2020",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2020.",
-                        List.of(new RequiresUnlockRequirement("Quests2019", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2021",
-                        "Quests released in 2021",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2021.",
-                        List.of(new RequiresUnlockRequirement("Quests2020", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2022",
-                        "Quests released in 2022",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2022.",
-                        List.of(new RequiresUnlockRequirement("Quests2021", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2023",
-                        "Quests released in 2023",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2023.",
-                        List.of(new RequiresUnlockRequirement("Quests2022", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2024",
-                        "Quests released in 2024",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2024.",
-                        List.of(new RequiresUnlockRequirement("Quests2023", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2025",
-                        "Quests released in 2025",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2025.",
-                        List.of(new RequiresUnlockRequirement("Quests2024", registry))
-                )
-        );
-
-        registry.register(
-                new QuestUnlock(
-                        "Quests2026",
-                        "Quests released in 2026",
-                        IconLoader.load("quests/quest_icon.png"),
-                        "Access to all quests released in 2026.",
-                        List.of(new RequiresUnlockRequirement("Quests2025", registry))
-                )
-        );
-
+            registry.register(
+                    new InventorySpaceUnlock(
+                            "InventoryRow" + i,
+                            "Inventory row " + (i + 2),
+                            IconLoader.load("inventory/inventoryExpansion.png"),
+                            "Access to more inventory space.",
+                            reqs
+                    )
+            );
+            previousRow = i;
+        }
     }
 
-    private static void registerTransport(UnlockRegistry registry) {
-        registry.register(
-                new TransportUnlock(
-                        "FairyRings",
-                        "Fairy rings",
-                        IconLoader.load("teleports/Fairy_ring.png"),
-                        "Allows the use of fairy rings."
-                )
-        );
+    private static void registerQuestTiers(UnlockRegistry registry) {
+        int[] QUEST_YEARS = {
+                2001, 2002, 2003, 2004, 2005, 2006, 2007,
+                2016, 2017, 2018, 2019, 2020,
+                2021, 2022, 2023, 2024
+        };
+        Integer previousYear = null;
+
+        for (int year : QUEST_YEARS) {
+            List<AppearRequirement> reqs = new ArrayList<>();
+
+            if (previousYear != null)
+                reqs.add(new UnlockIDRequirement("Quests" + previousYear, registry));
+
+            registry.register(
+                    new QuestUnlock(
+                            "Quests" + year,
+                            "Quests released in " + year,
+                            IconLoader.load("quests/quest_icon.png"),
+                            "Access to all quests released in " + year + ".",
+                            reqs
+                    )
+            );
+            previousYear = year;
+        }
     }
 
     private static void registerClueTiers(UnlockRegistry registry) {
-        registry.register(
-                new ClueUnlock(
-                        "BEGINNERCLUES",
-                        "Beginner clues",
-                        IconLoader.load("clues/beginnerclue.png"),
-                        "Allows opening of beginner clue caskets.",
-                        List.of()
-                )
-        );
-        registry.register(
-                new ClueUnlock(
-                        "EASYCLUES",
-                        "Easy clues",
-                        IconLoader.load("clues/easyclue.png"),
-                        "Allows opening of easy clue caskets.",
-                        List.of(
-                                new RequiresUnlockRequirement("BEGINNERCLUES", registry)
-                        )
-                )
-        );
-        registry.register(
-                new ClueUnlock(
-                        "MEDIUMCLUES",
-                        "Medium clues",
-                        IconLoader.load("clues/mediumclue.png"),
-                        "Allows opening of hard clue caskets.",
-                        List.of(
-                                new RequiresUnlockRequirement("EASYCLUES", registry)
-                        )
-                )
-        );
-        registry.register(
-                new ClueUnlock(
-                        "HARDCLUES",
-                        "Hard clues",
-                        IconLoader.load("clues/hardclue.png"),
-                        "Allows opening of hard clue caskets.",
-                        List.of(
-                                new RequiresUnlockRequirement("MEDIUMCLUES", registry)
-                        )
-                )
-        );
-        registry.register(
-                new ClueUnlock(
-                        "ELITECLUES",
-                        "Elite clues",
-                        IconLoader.load("clues/eliteclue.png"),
-                        "Allows opening of elite clue caskets.",
-                        List.of(
-                                new RequiresUnlockRequirement("HARDCLUES", registry)
-                        )
-                )
-        );
-        registry.register(
-                new ClueUnlock(
-                        "MASTERCLUES",
-                        "Master clues",
-                        IconLoader.load("clues/masterclue.png"),
-                        "Allows opening of master clue caskets.",
-                        List.of(
-                                new RequiresUnlockRequirement("ELITECLUES", registry)
-                        ))
-        );
+        for (ClueTier tier : ClueTier.values()) {
+            List<AppearRequirement> reqs = new ArrayList<>();
+
+            ClueTier prev = tier.previous();
+            if (prev != null)
+                reqs.add(new UnlockIDRequirement(prev.getId(), registry));
+
+            registry.register(
+                    new ClueUnlock(
+                            tier.getId(),
+                            tier.getDisplayName(),
+                            IconLoader.load(tier.getIconPath()),
+                            "Allows opening of " + tier.getDisplayName().toLowerCase() + " clues.",
+                            reqs
+                    )
+            );
+        }
     }
 
+    // Java
+// In 'src/main/java/com/rogueliteplugin/unlocks/UnlockDefinitions.java'
     private static void registerMinigames(UnlockRegistry registry, RoguelitePlugin plugin) {
-        registry.register(
-                new MinigameUnlock(
-                        "Barbarian_Assault",
-                        "Barbarian Assault",
-                        IconLoader.load("minigames/Barbarian_Assault_logo.png"),
-                        "Allows access to the Barbarian assault minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "Bounty_Hunter",
-                        "Bounty Hunter",
-                        IconLoader.load("minigames/Bounty_Hunter_logo.png"),
-                        "Allows access to the Bounty Hunter minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "Temple_Trekking",
-                        "Temple Trekking",
-                        IconLoader.load("minigames/Temple_Trekking_logo.png"),
-                        "Allows access to the Temple Trekking minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "Castle Wars",
-                        "Castle Wars",
-                        IconLoader.load("minigames/Temple_Trekking_logo.png"),
-                        "Allows access to the Castle Wars minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "ChampionsChallenge",
-                        "Champions' Challenge",
-                        IconLoader.load("minigames/Champions_Challenge_logo.png"),
-                        "Allows access to the Champions' Challenge minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "CastleWars",
-                        "Castle Wars",
-                        IconLoader.load("minigames/Mg_castlewars.png"),
-                        "Allows access to the Castle Wars minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "ClanWars",
-                        "Clan Wars",
-                        IconLoader.load("minigames/Clan_Wars_logo.png"),
-                        "Allows access to the Clan Wars minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "DuelArena",
-                        "Duel Arena",
-                        IconLoader.load("minigames/Duel_Arena_logo.png"),
-                        "Allows access to the Duel Arena minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "MageArena",
-                        "Mage Arena",
-                        IconLoader.load("minigames/Mage_Arena_logo.png"),
-                        "Allows access to the Mage Arena minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "NightmareZone",
-                        "Nightmare Zone",
-                        IconLoader.load("minigames/Nightmare_Zone_logo.png"),
-                        "Allows access to the Nightmare Zone minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "PestControl",
-                        "Pest Control",
-                        IconLoader.load("minigames/Pest_Control_logo.png"),
-                        "Allows access to the Pest Control minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "TzHaarFightCave",
-                        "TzHaar Fight Cave",
-                        IconLoader.load("minigames/Tzhaar_Fight_Cave_logo.png"),
-                        "Allows access to the TzHaar Fight Cave minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "TzHaarFightPit",
-                        "TzHaar Fight Pit",
-                        IconLoader.load("minigames/Tzhaar_Fight_Pit_logo.png"),
-                        "Allows access to the TzHaar Fight Pit minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "LastManStanding",
-                        "Last Man Standing",
-                        IconLoader.load("minigames/Last_Man_Standing_logo.png"),
-                        "Allows access to the Last Man Standing minigame"
-                )
-        );
-        registry.register(
-                new MinigameUnlock(
-                        "Inferno",
-                        "Inferno",
-                        IconLoader.load("minigames/Inferno_logo.png"),
-                        "Allows access to the Inferno minigame"
-                )
-        );
+        String[][] defs = {
+                {"Barbarian_Assault", "Barbarian Assault"},
+                {"Bounty_Hunter", "Bounty Hunter"},
+                {"Temple_Trekking", "Temple Trekking"},
+                {"ChampionsChallenge", "Champions' Challenge"},
+                {"CastleWars", "Castle Wars"},
+                {"ClanWars", "Clan Wars"},
+                {"DuelArena", "Duel Arena"},
+                {"MageArena", "Mage Arena"},
+                {"NightmareZone", "Nightmare Zone"},
+                {"PestControl", "Pest Control"},
+                {"TzHaarFightCave", "TzHaar Fight Cave"},
+                {"TzHaarFightPit", "TzHaar Fight Pit"},
+                {"LastManStanding", "Last Man Standing"},
+                {"Inferno", "Inferno"}
+        };
+
+        for (String[] def : defs) {
+            String id = def[0];
+            String name = def[1];
+            registry.register(new MinigameUnlock(
+                    id,
+                    name,
+                    IconLoader.load("minigames/" + id + ".png"),
+                    "Allows access to the " + name + " minigame"
+            ));
+        }
     }
 
     private static void registerShops(UnlockRegistry registry, RoguelitePlugin plugin) {
-        // Basic shops/minimap icons registry
-        registry.register(new ShopUnlock(
-                "SHOP_GENERAL_STORE",
-                "General Store",
-                SpriteID.MAP_ICON_GENERAL_STORE,
-                "Allows access to general stores."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_AXE_SHOP",
-                "Axe Shop",
-                SpriteID.MAP_ICON_AXE_SHOP,
-                "Allows access to axe sales points."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_CANDLE_SHOP",
-                "Candle Shop",
-                SpriteID.MAP_ICON_CANDLE_SHOP,
-                "Allows access to candle shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_CHAINMAIL_SHOP",
-                "Chainmail Shop",
-                SpriteID.MAP_ICON_CHAINMAIL_SHOP,
-                "Allows access to chainmail shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_CLOTHES_SHOP",
-                "Clothes Shop",
-                SpriteID.MAP_ICON_CLOTHES_SHOP,
-                "Allows access to clothes shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_CRAFTING_SHOP",
-                "Crafting Shop",
-                SpriteID.MAP_ICON_CRAFTING_SHOP,
-                "Allows access to crafting shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_FARMING_SHOP",
-                "Farming Shop",
-                SpriteID.MAP_ICON_FARMING_SHOP,
-                "Allows access to farming shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_FISHING_SHOP",
-                "Fishing Shop",
-                SpriteID.MAP_ICON_FISHING_SHOP,
-                "Allows access to fishing shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_FOOD_SHOP",
-                "Food Shop",
-                SpriteID.MAP_ICON_FOOD_SHOP,
-                "Allows access to general food shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_FOOD_SHOP_CUTLERY",
-                "Cutlery Food Shop",
-                SpriteID.MAP_ICON_FOOD_SHOP_CUTLERY,
-                "Unlocks access to cutlery food shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_FOOD_SHOP_FRUIT",
-                "Fruit Food Shop",
-                SpriteID.MAP_ICON_FOOD_SHOP_FRUIT,
-                "Unlocks access to fruit food shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_FUR_TRADER",
-                "Fur Trader",
-                SpriteID.MAP_ICON_FUR_TRADER,
-                "Allows access to fur trading shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_GEM_SHOP",
-                "Gem Shop",
-                SpriteID.MAP_ICON_GEM_SHOP,
-                "Allows access to gem shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_HELMET_SHOP",
-                "Helmet Shop",
-                SpriteID.MAP_ICON_HELMET_SHOP,
-                "Allows access to helmet shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_HUNTER_SHOP",
-                "Hunter Shop",
-                SpriteID.MAP_ICON_HUNTER_SHOP,
-                "Allows access to hunter equipment shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_JEWELLERY_SHOP",
-                "Jewellery Shop",
-                SpriteID.MAP_ICON_JEWELLERY_SHOP,
-                "Allows access to jewellery shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_MACE_SHOP",
-                "Mace Shop",
-                SpriteID.MAP_ICON_MACE_SHOP,
-                "Allows access to mace shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_MAGIC_SHOP",
-                "Magic Shop",
-                SpriteID.MAP_ICON_MAGIC_SHOP,
-                "Allows access to magic item shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_MINING_SHOP",
-                "Mining Shop",
-                SpriteID.MAP_ICON_MINING_SHOP,
-                "Allows access to mining supply shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_PET_SHOP",
-                "Pet Shop",
-                SpriteID.MAP_ICON_PET_SHOP,
-                "Allows access to pet shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_PLATEBODY_SHOP",
-                "Platebody Shop",
-                SpriteID.MAP_ICON_PLATEBODY_SHOP,
-                "Allows access to platebody armour shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_PLATELEGS_SHOP",
-                "Platelegs Shop",
-                SpriteID.MAP_ICON_PLATELEGS_SHOP,
-                "Allows access to platelegs shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_PLATESKIRT_SHOP",
-                "Plateskirt Shop",
-                SpriteID.MAP_ICON_PLATESKIRT_SHOP,
-                "Allows access to plateskirt shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_SCIMITAR_SHOP",
-                "Scimitar Shop",
-                SpriteID.MAP_ICON_SCIMITAR_SHOP,
-                "Allows access to scimitar shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_SHIELD_SHOP",
-                "Shield Shop",
-                SpriteID.MAP_ICON_SHIELD_SHOP,
-                "Allows access to shield shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_SILK_TRADER",
-                "Silk Trader",
-                SpriteID.MAP_ICON_SILK_TRADER,
-                "Allows access to silk trading shops."
-        ));
-
-        registry.register(new ShopUnlock(
-                "SHOP_SILVER_SHOP",
-                "Silver Shop",
-                SpriteID.MAP_ICON_SILVER_SHOP,
-                "Allows access to silver product shops."
-        ));
+        for (ShopCategory category : ShopCategory.values())
+        {
+            registry.register(new ShopUnlock(
+                    category.name(), // unlock ID
+                    category.getDisplayName(),
+                    IconLoader.load("shopIcons/" + category.name() + ".png"),
+                    "Allows access to the " + category.getDisplayName().toLowerCase()
+            ));
+        }
     }
 
     private static void registerBosses(UnlockRegistry registry) {
         registry.register(new BossUnlock("MIMIC", "Mimic", IconLoader.load("icon.png"), "Fight the Mimic.", List.of(
-                new CombatLevelRequirement(20)
+                new CombatRequirement(40, 126)
         )));
-        /*
-        registry.register(new BossUnlock("OBOR", "Obor", IconLoader.load("icon.png"), "Hill giant boss."));
-        registry.register(new BossUnlock("BRYOPHYTA", "Bryophyta", IconLoader.load("icon.png"), "Moss giant boss."));
-        registry.register(new BossUnlock("GIANT_MOLE", "Giant Mole", IconLoader.load("icon.png"), "Boss beneath Falador."));
-        registry.register(new BossUnlock("GROTESQUE_GUARDIANS", "Grotesque Guardians", IconLoader.load("icon.png"), "Slayer tower rooftop boss."));
-        registry.register(new BossUnlock("TEMPOROSS", "Tempoross", IconLoader.load("icon.png"), "Fishing skilling boss."));
-        registry.register(new BossUnlock("WINTERTODT", "Wintertodt", IconLoader.load("icon.png"), "Firemaking skilling boss."));
-        registry.register(new BossUnlock("BARROWS", "Barrows Brothers", IconLoader.load("icon.png"), "Barrows chest encounter."));
-        registry.register(new BossUnlock("SARACHNIS", "Sarachnis",IconLoader.load("icon.png"), "Spider boss in Forthos Dungeon."));
-        registry.register(new BossUnlock("KALPHITE_QUEEN", "Kalphite Queen", IconLoader.load("icon.png"), "Desert boss."));
-        registry.register(new BossUnlock("HESPORI", "Hespori", IconLoader.load("icon.png"), "Farming guild boss."));
-        registry.register(new BossUnlock("SKOTIZO", "Skotizo", IconLoader.load("icon.png"), "Demonic boss in Catacombs."));
-        registry.register(new BossUnlock("ZALCANO", "Zalcano", IconLoader.load("icon.png"), "Mining boss in Prifddinas."));
-        registry.register(new BossUnlock("KING_BLACK_DRAGON", "King Black Dragon", IconLoader.load("icon.png"), "Wilderness dragon boss."));
-        registry.register(new BossUnlock("KRAKEN", "Kraken", IconLoader.load("icon.png"), "Slayer boss."));
-        registry.register(new BossUnlock("ABYSSAL_SIRE", "Abyssal Sire", IconLoader.load("icon.png"), "Abyssal demon boss."));
-        registry.register(new BossUnlock("THERMY", "Thermonuclear Smoke Devil", IconLoader.load("icon.png"), "Smoke devil boss."));
-        registry.register(new BossUnlock("GAUNTLET", "The Gauntlet", IconLoader.load("icon.png"), "Prifddinas challenge."));
-        registry.register(new BossUnlock("ZULRAH", "Zulrah", IconLoader.load("icon.png"), "Poisonous serpent boss."));
-        registry.register(new BossUnlock("CERBERUS", "Cerberus", IconLoader.load("icon.png"), "Hellhound boss."));
-        registry.register(new BossUnlock("VORKATH", "Vorkath", IconLoader.load("icon.png"), "Undead dragon boss."));
-        registry.register(new BossUnlock("GENERAL_GRAARDOR", "General Graardor", IconLoader.load("icon.png"), "Bandos GWD boss."));
-        registry.register(new BossUnlock("KRIL", "K'ril Tsutsaroth", IconLoader.load("icon.png"), "Zamorak GWD boss."));
-        registry.register(new BossUnlock("ZILYANA", "Commander Zilyana", IconLoader.load("icon.png"), "Saradomin GWD boss."));
-        registry.register(new BossUnlock("KREEARRA", "Kree'arra",IconLoader.load("icon.png"), "Armadyl GWD boss."));
-        registry.register(new BossUnlock("NIGHTMARE", "The Nightmare", IconLoader.load("icon.png"), "Slepe nightmare boss."));
-        registry.register(new BossUnlock("CORPOREAL_BEAST", "Corporeal Beast", IconLoader.load("icon.png"), "High-level group boss."));
-        registry.register(new BossUnlock("COX", "Chambers of Xeric", IconLoader.load("icon.png"), "Raid."));
-        registry.register(new BossUnlock("ALCHEMICAL_HYDRA", "Alchemical Hydra", IconLoader.load("icon.png"), "Hydra slayer boss."));
-        registry.register(new BossUnlock("NEX", "Nex", IconLoader.load("icon.png"), "Ancient prison boss."));
-        registry.register(new BossUnlock("DK_SUPREME", "Dagannoth Supreme", IconLoader.load("icon.png"), "Dagannoth King."));
-        registry.register(new BossUnlock("DK_REX", "Dagannoth Rex", IconLoader.load("icon.png"), "Dagannoth King."));
-        registry.register(new BossUnlock("DK_PRIME", "Dagannoth Prime", IconLoader.load("icon.png"), "Dagannoth King."));
-        registry.register(new BossUnlock("CORRUPTED_GAUNTLET", "Corrupted Gauntlet", IconLoader.load("icon.png"), "Hard mode Gauntlet."));
-        registry.register(new BossUnlock("PHANTOM_MUSPAH", "Phantom Muspah", IconLoader.load("icon.png"), "Ancient ice boss."));
-        registry.register(new BossUnlock("CHAOS_ELEMENTAL", "Chaos Elemental",IconLoader.load("icon.png"), "Wilderness boss."));
-        registry.register(new BossUnlock("ARTIO", "Artio",IconLoader.load("icon.png"), "Callisto variant."));
-        registry.register(new BossUnlock("CALVARION", "Calvar'ion", IconLoader.load("icon.png"), "Vet'ion variant."));
-        registry.register(new BossUnlock("SPINDEL", "Spindel",IconLoader.load("icon.png"), "Venenatis variant."));
-        registry.register(new BossUnlock("CHAOS_FANATIC", "Chaos Fanatic", IconLoader.load("icon.png"), "Wilderness mage boss."));
-        registry.register(new BossUnlock("CRAZY_ARCHAEOLOGIST", "Crazy Archaeologist", IconLoader.load("icon.png"), "Wilderness boss."));
-        registry.register(new BossUnlock("DERANGED_ARCHAEOLOGIST", "Deranged Archaeologist", IconLoader.load("icon.png"), "Fossil Island boss."));
-        registry.register(new BossUnlock("SCORPIA", "Scorpia", IconLoader.load("icon.png"), "Wilderness scorpion."));
-        registry.register(new BossUnlock("JAD", "TzTok-Jad",IconLoader.load("icon.png"), "Fight caves boss."));
-        registry.register(new BossUnlock("ZUK", "TzKal-Zuk",IconLoader.load("icon.png"), "Inferno boss."));
-        registry.register(new BossUnlock("WHISPERER", "The Whisperer", IconLoader.load("icon.png"), "DT2 boss."));
-        registry.register(new BossUnlock("DUKE", "Duke Sucellus", IconLoader.load("icon.png"), "DT2 boss."));
-        registry.register(new BossUnlock("LEVIATHAN", "The Leviathan",IconLoader.load("icon.png"), "DT2 boss."));
-        registry.register(new BossUnlock("VARDORVIS", "Vardorvis", IconLoader.load("icon.png"), "DT2 boss."));
-        registry.register(new BossUnlock("SCURRIUS", "Scurrius", IconLoader.load("icon.png"), "Varrock sewer rat boss."));
-        registry.register(new BossUnlock("SOL_HEREDIT", "Sol Heredit",IconLoader.load("icon.png"), "Varlamore boss."));
-        registry.register(new BossUnlock("LUNAR_CHESTS", "Lunar Chests", IconLoader.load("icon.png"), "Perilous Moons reward."));
-        registry.register(new BossUnlock("ARAXXOR", "Araxxor", IconLoader.load("icon.png"), "Spider boss."));
-        registry.register(new BossUnlock("AMOXLIATL", "Amoxliatl", IconLoader.load("icon.png"), "Varlamore boss."));
-        registry.register(new BossUnlock("HUEYCOATL", "The Hueycoatl", IconLoader.load("icon.png"), "Varlamore boss."));
-        */
+        registry.register(new BossUnlock("OBOR", "Obor", IconLoader.load("icon.png"), "Hill giant boss.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("BRYOPHYTA", "Bryophyta", IconLoader.load("icon.png"), "Moss giant boss.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("GIANT_MOLE", "Giant Mole", IconLoader.load("icon.png"), "Boss beneath Falador.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("GROTESQUE_GUARDIANS", "Grotesque Guardians", IconLoader.load("icon.png"), "Slayer tower rooftop boss.", List.of(
+                new CombatRequirement(85, 126)
+        )));
+        registry.register(new BossUnlock("TEMPOROSS", "Tempoross", IconLoader.load("icon.png"), "Fishing skilling boss.", List.of()));
+        registry.register(new BossUnlock("WINTERTODT", "Wintertodt", IconLoader.load("icon.png"), "Firemaking skilling boss.", List.of()));
+        registry.register(new BossUnlock("BARROWS", "Barrows Brothers", IconLoader.load("icon.png"), "Barrows chest encounter.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("SARACHNIS", "Sarachnis", IconLoader.load("icon.png"), "Spider boss in Forthos Dungeon.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("KALPHITE_QUEEN", "Kalphite Queen", IconLoader.load("icon.png"), "Desert boss.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("HESPORI", "Hespori", IconLoader.load("icon.png"), "Farming guild boss.", List.of(
+                new CombatRequirement(20, 126)
+        )));
+        registry.register(new BossUnlock("SKOTIZO", "Skotizo", IconLoader.load("icon.png"), "Demonic boss in Catacombs.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("ZALCANO", "Zalcano", IconLoader.load("icon.png"), "Mining boss in Prifddinas.", List.of(
+
+        )));
+        registry.register(new BossUnlock("KING_BLACK_DRAGON", "King Black Dragon", IconLoader.load("icon.png"), "Wilderness dragon boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("KRAKEN", "Kraken", IconLoader.load("icon.png"), "Slayer boss.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("ABYSSAL_SIRE", "Abyssal Sire", IconLoader.load("icon.png"), "Abyssal demon boss.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("THERMY", "Thermonuclear Smoke Devil", IconLoader.load("icon.png"), "Smoke devil boss.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("GAUNTLET", "The Gauntlet", IconLoader.load("icon.png"), "Prifddinas challenge.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("ZULRAH", "Zulrah", IconLoader.load("icon.png"), "Poisonous serpent boss.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("CERBERUS", "Cerberus", IconLoader.load("icon.png"), "Hellhound boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("VORKATH", "Vorkath", IconLoader.load("icon.png"), "Undead dragon boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("GENERAL_GRAARDOR", "General Graardor", IconLoader.load("icon.png"), "Bandos GWD boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("KRIL", "K'ril Tsutsaroth", IconLoader.load("icon.png"), "Zamorak GWD boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("ZILYANA", "Commander Zilyana", IconLoader.load("icon.png"), "Saradomin GWD boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("KREEARRA", "Kree'arra", IconLoader.load("icon.png"), "Armadyl GWD boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("NIGHTMARE", "The Nightmare", IconLoader.load("icon.png"), "Slepe nightmare boss.", List.of(
+                new CombatRequirement(70, 126)
+        )));
+        registry.register(new BossUnlock("CORPOREAL_BEAST", "Corporeal Beast", IconLoader.load("icon.png"), "High-level group boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("COX", "Chambers of Xeric", IconLoader.load("icon.png"), "Raid.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("ALCHEMICAL_HYDRA", "Alchemical Hydra", IconLoader.load("icon.png"), "Hydra slayer boss.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("NEX", "Nex", IconLoader.load("icon.png"), "Ancient prison boss.", List.of(
+                new CombatRequirement(70, 126)
+        )));
+        registry.register(new BossUnlock("DK_SUPREME", "Dagannoth Supreme", IconLoader.load("icon.png"), "Dagannoth King.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("DK_REX", "Dagannoth Rex", IconLoader.load("icon.png"), "Dagannoth King.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("DK_PRIME", "Dagannoth Prime", IconLoader.load("icon.png"), "Dagannoth King.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("CORRUPTED_GAUNTLET", "Corrupted Gauntlet", IconLoader.load("icon.png"), "Hard mode Gauntlet.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("PHANTOM_MUSPAH", "Phantom Muspah", IconLoader.load("icon.png"), "Ancient ice boss.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("CHAOS_ELEMENTAL", "Chaos Elemental", IconLoader.load("icon.png"), "Wilderness boss.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("ARTIO", "Artio", IconLoader.load("icon.png"), "Callisto variant.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("CALVARION", "Calvar'ion", IconLoader.load("icon.png"), "Vet'ion variant.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("SPINDEL", "Spindel", IconLoader.load("icon.png"), "Venenatis variant.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("CHAOS_FANATIC", "Chaos Fanatic", IconLoader.load("icon.png"), "Wilderness mage boss.", List.of(
+                new CombatRequirement(30, 126)
+        )));
+        registry.register(new BossUnlock("CRAZY_ARCHAEOLOGIST", "Crazy Archaeologist", IconLoader.load("icon.png"), "Wilderness boss.", List.of(
+                new CombatRequirement(30, 126)
+        )));
+        registry.register(new BossUnlock("DERANGED_ARCHAEOLOGIST", "Deranged Archaeologist", IconLoader.load("icon.png"), "Fossil Island boss.", List.of(
+                new CombatRequirement(20, 126)
+        )));
+        registry.register(new BossUnlock("SCORPIA", "Scorpia", IconLoader.load("icon.png"), "Wilderness scorpion.", List.of(
+                new CombatRequirement(50, 126)
+        )));
+        registry.register(new BossUnlock("WHISPERER", "The Whisperer", IconLoader.load("icon.png"), "DT2 boss.", List.of(
+                new CombatRequirement(80, 126)
+        )));
+        registry.register(new BossUnlock("DUKE", "Duke Sucellus", IconLoader.load("icon.png"), "DT2 boss.", List.of(
+                new CombatRequirement(80, 126)
+        )));
+        registry.register(new BossUnlock("LEVIATHAN", "The Leviathan", IconLoader.load("icon.png"), "DT2 boss.", List.of(
+                new CombatRequirement(80, 126)
+        )));
+        registry.register(new BossUnlock("VARDORVIS", "Vardorvis", IconLoader.load("icon.png"), "DT2 boss.", List.of(
+                new CombatRequirement(80, 126)
+        )));
+        registry.register(new BossUnlock("SCURRIUS", "Scurrius", IconLoader.load("icon.png"), "Varrock sewer rat boss.", List.of(
+                new CombatRequirement(10, 126)
+        )));
+        registry.register(new BossUnlock("ARAXXOR", "Araxxor", IconLoader.load("icon.png"), "Spider boss.", List.of(
+                new CombatRequirement(60, 126)
+        )));
+        registry.register(new BossUnlock("AMOXLIATL", "Amoxliatl", IconLoader.load("icon.png"), "Varlamore boss.", List.of(
+                new CombatRequirement(40, 126)
+        )));
+        registry.register(new BossUnlock("HUEYCOATL", "The Hueycoatl", IconLoader.load("icon.png"), "Varlamore boss.", List.of(
+                new CombatRequirement(20, 126)
+        )));
+
+    }
+
+    private static void registerEquipmentSlots(UnlockRegistry registry) {
+        for (UnlockEquipslot.EquipSlot slot : UnlockEquipslot.EquipSlot.values()) {
+            final String id = "EQUIP_" + slot.toIdSuffix();
+            final String name = slot.getDisplayName() + " slot";
+            final String description = "Allows equipping items in the " + slot.getDisplayName().toLowerCase() + " slot.";
+            registry.register(new UnlockEquipslot(id, name, IconLoader.load("equipmentslots/" + slot.toIdSuffix() + ".png"), description, slot));
+        }
     }
 }
+

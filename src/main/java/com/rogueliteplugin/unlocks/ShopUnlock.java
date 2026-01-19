@@ -1,17 +1,19 @@
 package com.rogueliteplugin.unlocks;
 
+import javax.swing.*;
+
 public class ShopUnlock implements Unlock
 {
     private final String id;
     private final String name;
-    private final int spriteId;
+    private final Icon icon;
     private final String description;
 
-    public ShopUnlock(String id, String name, int spriteId, String description)
+    public ShopUnlock(String id, String name, Icon icon, String description)
     {
         this.id = id;
         this.name = name;
-        this.spriteId = spriteId;
+        this.icon = icon;
         this.description = description;
     }
 
@@ -40,8 +42,7 @@ public class ShopUnlock implements Unlock
     }
 
     @Override
-    public UnlockIcon getIcon()
-    {
-        return new SpriteUnlockIcon(spriteId);
+    public UnlockIcon getIcon() {
+        return new ImageUnlockIcon(icon);
     }
 }

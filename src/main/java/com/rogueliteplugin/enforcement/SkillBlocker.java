@@ -1,12 +1,13 @@
-package com.rogueliteplugin;
+package com.rogueliteplugin.enforcement;
 
 import com.google.inject.Inject;
+
 import java.awt.Color;
-import java.util.Set;
+
+import com.rogueliteplugin.RoguelitePlugin;
 import net.runelite.api.Client;
 import net.runelite.api.Skill;
 import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
@@ -14,8 +15,7 @@ import net.runelite.api.widgets.WidgetSizeMode;
 import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.eventbus.Subscribe;
 
-public class SkillBlocker
-{
+public class SkillBlocker {
     private static final int SCRIPTID_STATS_INIT = 394;
     private static final int SCRIPTID_STATS_REFRESH = 393;
 
@@ -29,12 +29,7 @@ public class SkillBlocker
     private Client client;
 
     @Inject
-    private RogueliteConfig config;
-
-    @Inject
     private RoguelitePlugin plugin;
-
-    private Widget currentWidget;
 
     private static final Skill[] SKILLS_TAB_ORDER = {
             Skill.ATTACK,
@@ -64,57 +59,44 @@ public class SkillBlocker
     };
 
     @Subscribe
-    public void onScriptPreFired(ScriptPreFired event)
-    {
-        if (event.getScriptId() == SCRIPTID_STATS_INIT
-                || event.getScriptId() == SCRIPTID_STATS_REFRESH)
-        {
-            Widget widget = event.getScriptEvent().getSource();
-            if (widget != null && widget.getId() == InterfaceID.Stats.UNIVERSE)
-            {
-                currentWidget = null;
-            }
-            else
-            {
-                currentWidget = widget;
-            }
-        }
-    }
-
-    @Subscribe
-    public void onScriptPostFired(ScriptPostFired event)
-    {
+    public void onScriptPostFired(ScriptPostFired event) {
         if (event.getScriptId() != SCRIPTID_STATS_INIT
-                && event.getScriptId() != SCRIPTID_STATS_REFRESH)
-        {
+                && event.getScriptId() != SCRIPTID_STATS_REFRESH) {
             return;
         }
 
+        //TODO: Change to and fix:
+        /*
+        @Subscribe
+public void onWidgetLoaded(WidgetLoaded event)
+{
+    if (event.getGroupId() != WidgetID.SKILLS_GROUP_ID)
+    {
+        return;
+    }
+
+         */
+
         Widget container = client.getWidget(InterfaceID.Stats.UNIVERSE);
-        if (container == null)
-        {
+        if (container == null) {
             return;
         }
 
         Widget[] tiles = container.getStaticChildren();
-        for (int i = 0; i < tiles.length && i < SKILLS_TAB_ORDER.length; i++)
-        {
+        for (int i = 0; i < tiles.length && i < SKILLS_TAB_ORDER.length; i++) {
             applyGrayOverlay(tiles[i], SKILLS_TAB_ORDER[i]);
         }
     }
 
-    private void applyGrayOverlay(Widget parent, Skill skill)
-    {
-        if (parent == null || parent.getType() != WidgetType.LAYER)
-        {
+    private void applyGrayOverlay(Widget parent, Skill skill) {
+        if (parent == null || parent.getType() != WidgetType.LAYER) {
             return;
         }
 
         boolean allowed = plugin.isSkillUnlocked(skill);
 
         Widget gray = parent.getChild(GRAY_OVERLAY_CHILD_ID);
-        if (gray == null)
-        {
+        if (gray == null) {
             gray = parent.createChild(GRAY_OVERLAY_CHILD_ID, WidgetType.RECTANGLE);
             gray.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
             gray.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
@@ -128,8 +110,7 @@ public class SkillBlocker
         }
 
         Widget lockIcon = parent.getChild(LOCK_ICON_CHILD_ID);
-        if (lockIcon == null)
-        {
+        if (lockIcon == null) {
             lockIcon = parent.createChild(LOCK_ICON_CHILD_ID, WidgetType.GRAPHIC);
             lockIcon.setSpriteId(LOCK_SPRITE_ID);
             lockIcon.setXPositionMode(WidgetPositionMode.ABSOLUTE_LEFT);
@@ -141,13 +122,10 @@ public class SkillBlocker
             lockIcon.setHasListener(false);
         }
 
-        if (allowed)
-        {
+        if (allowed) {
             gray.setOpacity(255);
             lockIcon.setHidden(true);
-        }
-        else
-        {
+        } else {
             gray.setOpacity(GRAY_OPACITY);
             lockIcon.setHidden(false);
         }
@@ -156,33 +134,27 @@ public class SkillBlocker
         lockIcon.revalidate();
     }
 
-    public void clearAll()
-    {
+    public void clearAll() {
         Widget container = client.getWidget(InterfaceID.Stats.UNIVERSE);
-        if (container == null)
-        {
+        if (container == null) {
             return;
         }
 
-        for (Widget child : container.getStaticChildren())
-        {
-            if (child == null)
-            {
+        for (Widget child : container.getStaticChildren()) {
+            if (child == null) {
                 continue;
             }
 
             // Remove gray overlay
             Widget gray = child.getChild(GRAY_OVERLAY_CHILD_ID);
-            if (gray != null)
-            {
+            if (gray != null) {
                 gray.setOpacity(255);
                 gray.revalidate();
             }
 
             // Remove lock icon
             Widget lock = child.getChild(LOCK_ICON_CHILD_ID);
-            if (lock != null)
-            {
+            if (lock != null) {
                 lock.setHidden(true);
                 lock.revalidate();
             }
@@ -193,17 +165,14 @@ public class SkillBlocker
         }
     }
 
-    public void refreshAll()
-    {
+    public void refreshAll() {
         Widget container = client.getWidget(InterfaceID.Stats.UNIVERSE);
-        if (container == null)
-        {
+        if (container == null) {
             return;
         }
 
         Widget[] tiles = container.getStaticChildren();
-        for (int i = 0; i < tiles.length && i < SKILLS_TAB_ORDER.length; i++)
-        {
+        for (int i = 0; i < tiles.length && i < SKILLS_TAB_ORDER.length; i++) {
             applyGrayOverlay(tiles[i], SKILLS_TAB_ORDER[i]);
         }
     }

@@ -14,7 +14,8 @@ import com.google.inject.Inject;
 import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
-import java.awt.image.BufferedImage;
+import java.awt.event.ActionListener;
+import java.net.URL;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
@@ -118,27 +119,44 @@ public class RoguelitePanel extends PluginPanel {
 
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
 
-        if (plugin.anyChallengeActive()) {
-            content.add(new JLabel("Complete the challenge to"));
-            content.add(new JLabel("unlock a new booster pack."));
-        } else
-            content.add(new JLabel("You can unlock a new booster pack!"));
-        content.add(Box.createVerticalStrut(6));
+        if (!plugin.statsInitialized)
+        {
+            content.add(new JLabel("Please login to see your roguelite progress."));
+            revalidate();
+            repaint();
+            return;
+        }
 
-        // Always show the buy button
-        if (plugin.playerIsLoggedIn()) {
-            JButton buyButton = new JButton("Buy new pack");
-            buyButton.setMargin(new Insets(8, 12, 8, 12));
-            buyButton.setFont(buyButton.getFont().deriveFont(14f));
-            buyButton.setPreferredSize(new Dimension(Integer.MAX_VALUE, 40));
-            buyButton.setEnabled(!plugin.anyChallengeActive());
-            buyButton.addActionListener(e -> plugin.onBuyPackClicked());
-            content.add(buyButton);
+        //Buttons section
+
+        //Open booster pack button
+        if (plugin.getPackChoiceState() == PackChoiceState.NONE) {
+            boolean buyNewPackButtonActive = !plugin.anyChallengeActive();
+            content.add(createActionButton(buyNewPackButtonActive ? "Open booster pack" : "<html>Complete the current challenge<br>to unlock a new pack.</html>",
+                    buyNewPackButtonActive, "/icons/stack.png", e -> plugin.onBuyPackClicked()));
+            content.add(Box.createVerticalStrut(15));
+        }
+
+        //Skip current challenge button
+        if (plugin.getPackChoiceState() == PackChoiceState.NONE && plugin.anyChallengeActive()) {
+            boolean skipChallengeButtonActive = plugin.getSkipTokens() > 0;
+            content.add(createActionButton("<html>Skip current challenge<br>(You have " + plugin.getSkipTokens() + " skip tokens)</html>",
+                    skipChallengeButtonActive, "/icons/currency/skip.png", e -> plugin.UseChallengeSkipToken()));
+            content.add(Box.createVerticalStrut(15));
+        }
+
+        //Reroll current pack button
+        if (plugin.getPackChoiceState() == PackChoiceState.CHOOSING) {
+            boolean rerollButtonActive = plugin.getRerollTokens() > 0;
+            content.add(createActionButton("<html>Reroll pack options<br>(You have " + plugin.getRerollTokens() + " skip tokens)</html>",
+                    rerollButtonActive, "/icons/currency/reroll.png", e -> plugin.useRerollToken()));
+            content.add(Box.createVerticalStrut(15));
         }
 
         // Show pack choice cards if user is choosing
-        if (plugin.playerIsLoggedIn() && plugin.getPackChoiceState() == PackChoiceState.CHOOSING) {
-            content.add(new JLabel("Choose a card:"));
+        if (plugin.getPackChoiceState() == PackChoiceState.CHOOSING) {
+            content.add(new JLabel("Choose a card,"));
+            content.add(new JLabel("you can only pick one:"));
             content.add(Box.createVerticalStrut(8));
 
             for (PackOption option : plugin.getCurrentPackOptions()) {
@@ -176,11 +194,12 @@ public class RoguelitePanel extends PluginPanel {
                 + "<b>Rules</b><br>"
                 + "• Complete the active challenge to open a booster pack.<br>"
                 + "• Packs contain cards that unlock a range of content, see the list on this page to see what you have access to.<br>"
-                + "• Blocked content is not physically blocked as that is against runescape rules, but it is indicated as best as possible.<br>"
-                + "• Each card also contains a new challenge, so pick wisely.<br>"
+                + "• Each card also contains a new challenge you need to complete for the next pack, so pick wisely.<br>"
                 + "</html>";
 
-        rulesPanel = new CollapsiblePanel("Rules", new JLabel(rulesHtml));
+        rulesPanel = new
+
+                CollapsiblePanel("Rules", new JLabel(rulesHtml));
         rulesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(Box.createVerticalStrut(6));
         content.add(rulesPanel);
@@ -192,8 +211,53 @@ public class RoguelitePanel extends PluginPanel {
         // Always show challenges section
         updateChallengesSection(content);
 
+        content.add(Box.createVerticalStrut(12));
+        content.add(new
+
+                JLabel("Uses icons from:"));
+        content.add(new
+
+                JLabel("https://game-icons.net"));
+
+
         revalidate();
+
         repaint();
+    }
+
+    // Java
+    private JButton createActionButton(String htmlText,
+                                       boolean enabled,
+                                       String iconResourcePath,
+                                       ActionListener listener) {
+        JButton btn = new JButton(htmlText);
+        btn.setMargin(new Insets(12, 16, 12, 16));
+        btn.setFont(btn.getFont().deriveFont(Font.BOLD, 16f));
+        btn.setPreferredSize(new Dimension(Integer.MAX_VALUE, 50));
+        btn.setEnabled(enabled);
+
+        // Load icon safely and set disabled variant
+        URL iconUrl = getClass().getResource(iconResourcePath);
+        if (iconUrl != null) {
+            ImageIcon icon = new ImageIcon(iconUrl);
+            btn.setIcon(icon);
+        }
+
+        // Custom disabled visuals (optional, consistent dim look)
+        if (!enabled) {
+            btn.setForeground(new Color(150, 150, 150));
+            btn.setBackground(new Color(235, 5, 5));
+            btn.setOpaque(true);
+            btn.setContentAreaFilled(true);
+            btn.setBorderPainted(true);
+            btn.setFocusPainted(false);
+        }
+
+        if (enabled && listener != null) {
+            btn.addActionListener(listener);
+        }
+
+        return btn;
     }
 
     private void updateUnlocksSection(JPanel content) {
@@ -337,7 +401,7 @@ public class RoguelitePanel extends PluginPanel {
         long validCount = plugin.getChallengeRegistry()
                 .getAll()
                 .stream()
-                .filter(c -> c.isValidWithUnlocks(plugin.getUnlockedIds()))
+                .filter(c -> c.isValidWithUnlocks(plugin,plugin.getUnlockedIds()))
                 .count();
 
         JLabel challengesHeader = new JLabel(
@@ -354,7 +418,7 @@ public class RoguelitePanel extends PluginPanel {
             }
 
             long typeValidCount = list.stream()
-                    .filter(c -> c.isValidWithUnlocks(plugin.getUnlockedIds()))
+                    .filter(c -> c.isValidWithUnlocks(plugin,plugin.getUnlockedIds()))
                     .count();
             String typeHeader = type + " (" + typeValidCount + "/" + list.size() + ")";
 
@@ -363,7 +427,7 @@ public class RoguelitePanel extends PluginPanel {
             categoryContent.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             for (Challenge challenge : list) {
-                boolean meetsRequirements = challenge.isValidWithUnlocks(plugin.getUnlockedIds());
+                boolean meetsRequirements = challenge.isValidWithUnlocks(plugin,plugin.getUnlockedIds());
 
                 JPanel row = new JPanel();
                 row.setLayout(new BoxLayout(row, BoxLayout.X_AXIS));
@@ -389,6 +453,7 @@ public class RoguelitePanel extends PluginPanel {
             categoryPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             panel.add(categoryPanel);
             panel.add(Box.createVerticalStrut(6));
+
         }
     }
 
@@ -409,7 +474,7 @@ public class RoguelitePanel extends PluginPanel {
 
                 try {
                     if (plugin != null) {
-                        met = req.isMet(plugin);
+                        met = req.isMet(plugin,plugin.getUnlockedIds());
                     }
                 } catch (Exception | AssertionError e) {
                     met = false;
@@ -444,7 +509,7 @@ public class RoguelitePanel extends PluginPanel {
 
                 try {
                     if (plugin != null) {
-                        met = req.isMet(plugin);
+                        met = req.isMet(plugin,plugin.getUnlockedIds());
                     }
                 } catch (Exception | AssertionError e) {
                     met = false;
@@ -470,25 +535,6 @@ public class RoguelitePanel extends PluginPanel {
 
         if (icon instanceof ImageUnlockIcon) {
             return ((ImageUnlockIcon) icon).getIcon();
-        }
-
-        if (icon instanceof SpriteUnlockIcon) {
-            SpriteUnlockIcon sprite = (SpriteUnlockIcon) icon;
-
-            try {
-                BufferedImage img = plugin
-                        .getSpriteManager()
-                        .getSprite(sprite.getSpriteId(), 0);
-
-                if (img == null) {
-                    return null;
-                }
-
-                Image scaled = img.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
-                return new ImageIcon(scaled);
-            } catch (AssertionError e) {
-                return null;
-            }
         }
 
         return null;

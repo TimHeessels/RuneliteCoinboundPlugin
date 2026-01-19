@@ -8,6 +8,10 @@ public enum UnlockType
     Transport,
     Clues,
     Bosses,
-    Quests
+    Quests,
+    Consumable,
+    InventorySlots,
+    EquipmentSlots,
+    Currency
 }
 

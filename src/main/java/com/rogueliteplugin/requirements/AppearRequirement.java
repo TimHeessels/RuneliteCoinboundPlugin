@@ -5,13 +5,10 @@ import java.util.Set;
 
 public interface AppearRequirement
 {
-    // Core check (used everywhere)
-    boolean isMet(Set<String> unlockedIds);
-
     // Convenience bridge for UI / tooltips
-    default boolean isMet(RoguelitePlugin plugin)
+    default boolean isMet(RoguelitePlugin plugin, Set<String> unlockedIds)
     {
-        return isMet(plugin.getUnlockedIds());
+        return true;
     }
 
     String getRequiredUnlockTitle();

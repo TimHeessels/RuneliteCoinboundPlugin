@@ -87,5 +87,37 @@ public interface RogueliteConfig extends Config {
         return "";
     }
 
+    @ConfigItem(
+            keyName = "rerollTokens",
+            name = "Reroll Tokens",
+            description = "Number of pack reroll tokens available"
+    )
+    default int rerollTokens()
+    {
+        return 0;
+    }
 
+    @ConfigItem(
+            keyName = "rerollTokens",
+            name = "",
+            description = ""
+    )
+    void rerollTokens(int value);
+
+    @ConfigItem(
+            keyName = "skipTokens",
+            name = "Skip Tokens",
+            description = "Number of challenge skip tokens available"
+    )
+    default int skipTokens()
+    {
+        return 0;
+    }
+
+    @ConfigItem(
+            keyName = "skipTokens",
+            name = "",
+            description = ""
+    )
+    void skipTokens(int value);
 }

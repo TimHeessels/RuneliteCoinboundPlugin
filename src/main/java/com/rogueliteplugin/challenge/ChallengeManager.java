@@ -37,10 +37,18 @@ public class ChallengeManager {
             current.increment(amount);
         }
         if (current.getProgress() >= current.getGoal())
-            runeliteClient.playSoundEffect(3283);
+            CompleteGoal();
+        else
+            saveToConfig();
+    }
+
+    public void CompleteGoal() {
+        current.CompleteGoal();
+        runeliteClient.playSoundEffect(3283);
         saveToConfig();
     }
 
+    //TODO: Check if need to implement
     public void clear() {
         current = null;
         saveToConfig();
@@ -57,7 +65,7 @@ public class ChallengeManager {
         clientConfig.currentChallengeGoal(current.getGoal());
     }
 
-    public void loadFromConfig(RogueliteConfig config,Client client, ChallengeRegistry registry) {
+    public void loadFromConfig(RogueliteConfig config, Client client, ChallengeRegistry registry) {
         clientConfig = config;
         runeliteClient = client;
         String id = config.currentChallengeID();
