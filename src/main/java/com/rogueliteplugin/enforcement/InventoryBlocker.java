@@ -121,9 +121,11 @@ public class InventoryBlocker {
 
         int fillerId = plugin.replaceItemID;
 
-        int maxFillerAmount = 28 - (getUnlockedRows() * 4);
+        int maxFillerAmount = 28 - (getUnlockedSlots());
 
-        plugin.Debug("maxFillerAmount: "+maxFillerAmount);
+        plugin.Debug("maxFillerAmount: " + maxFillerAmount);
+
+        //TODO: Check if there are enough filler items in the inventory to replace
 
         boolean replaceItemWithBlocks = true;
         if (w == null || !replaceItemWithBlocks) {
@@ -155,14 +157,13 @@ public class InventoryBlocker {
         }
     }
 
-    private int getUnlockedRows() {
-        int rows = 1; // first row always unlocked
-        for (int i = 2; i < TOTAL_ROWS; i++) {
-            boolean rowUnlocked = plugin.isUnlocked("InventoryRow" + i);
-            plugin.Debug("rowUnlocked: "+rowUnlocked);
-            if (rowUnlocked)
-                rows++;
+    int getUnlockedSlots() {
+        int unlockedSlots = 1; // First slot is always unlocked
+        for (int i = 1; i < 28; i++) {
+            if (plugin.isUnlocked("InventorySlot" + (i + 1))) {
+                unlockedSlots++;
+            }
         }
-        return rows;
+        return unlockedSlots;
     }
 }

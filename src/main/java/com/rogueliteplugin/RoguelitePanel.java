@@ -7,10 +7,11 @@ import com.rogueliteplugin.pack.UnlockPackOption;
 import com.rogueliteplugin.requirements.AppearRequirement;
 import com.rogueliteplugin.ui.PackOptionButton;
 import com.rogueliteplugin.unlocks.*;
-import com.rogueliteplugin.data.ChallengeType;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.api.Client;
 import com.google.inject.Inject;
+import net.runelite.client.util.AsyncBufferedImage;
 
 import javax.swing.JOptionPane;
 
@@ -19,7 +20,6 @@ import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.net.URL;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 
@@ -38,6 +38,9 @@ public class RoguelitePanel extends PluginPanel {
 
     @Inject
     private Client client;
+
+    @Inject
+    private ItemManager itemManager;
 
     public RoguelitePanel(RoguelitePlugin plugin) {
         this.plugin = plugin;
@@ -130,7 +133,7 @@ public class RoguelitePanel extends PluginPanel {
 
         //Open booster pack button
         if (plugin.getPackChoiceState() == PackChoiceState.NONE) {
-            boolean buyNewPackButtonActive = plugin.getAvailablePacks() > 0;
+            boolean buyNewPackButtonActive = plugin.getAvailablePacksToBuy() > 0;
             content.add(createActionButton(buyNewPackButtonActive ? "Open booster pack" : "<html>Collect at least X points to open a new booster pack</html>",
                     buyNewPackButtonActive, "/icons/stack.png", e -> plugin.onBuyPackClicked()));
             content.add(Box.createVerticalStrut(15));

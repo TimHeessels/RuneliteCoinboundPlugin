@@ -39,7 +39,7 @@ public class ShopBlocker {
 
         if (category == null) {
             // Unknown shop → allow
-            plugin.ShowPluginChat("<col=ff0000><b>Possibly locked!</b></col> Shop category not recognized by plugin. Check for yourself if this is unlocked.", false);
+            plugin.ShowPluginChat("<col=ff0000><b>Possibly locked!</b></col> Shop category not recognized by plugin. Check for yourself if this is unlocked.", -1);
             return;
         }
 
@@ -68,6 +68,6 @@ public class ShopBlocker {
     }
 
     private void blockShop(ShopCategory category) {
-        plugin.ShowPluginChat("<col=ff0000><b>"+category.getDisplayName()+" category is locked!</b></col> You have not unlocked access to this shop yet.", true);
+        plugin.ShowPluginChat("<col=ff0000><b>"+category.getDisplayName()+" category is locked!</b></col> You have not unlocked access to this shop yet.", 2394);
     }
 }

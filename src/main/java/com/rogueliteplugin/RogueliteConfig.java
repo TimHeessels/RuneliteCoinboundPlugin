@@ -59,20 +59,20 @@ public interface RogueliteConfig extends Config {
     void illegalXPGained(long value);
 
     @ConfigItem(
-            keyName = "currentPoints",
-            name = "current item points",
-            description = "How many points you gained from getting unique items"
+            keyName = "packsBought",
+            name = "how many packs you've bought",
+            description = "How many packs you've bought so far"
     )
-    default int currentPoints() {
+    default int packsBought() {
         return 0;
     }
 
     @ConfigItem(
-            keyName = "currentPoints",
-            name = "current item points",
-            description = "How many points you gained from getting unique items"
+            keyName = "packsBought",
+            name = "how many packs you've bought",
+            description = "How many packs you've bought so far"
     )
-    void currentPoints(int value);
+    void packsBought(int value);
 
     @ConfigItem(
             keyName = "unlockedIds",
@@ -84,20 +84,20 @@ public interface RogueliteConfig extends Config {
     }
 
     @ConfigItem(
-            keyName = "seenItemIds",
-            name = "Seen item IDs",
-            description = "Comma-separated list of item IDs that have been picked up"
+            keyName = "peakWealth",
+            name = "Peak wealth",
+            description = "The max amount of coins you had in your inventory at once point"
     )
-    default String seenItemIds()
+    default int peakWealth()
     {
-        return "";
+        return 0;
     }
 
     @ConfigItem(
-            keyName = "seenItemIds",
-            name = "Seen item IDs",
-            description = "Comma-separated list of item IDs that have been picked up"
+            keyName = "peakWealth",
+            name = "Peak wealth",
+            description = "The max amount of coins you had in your inventory at once point"
     )
-    void seenItemIds(String value);
+    void peakWealth(long value);
 
 }

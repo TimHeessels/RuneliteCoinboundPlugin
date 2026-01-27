@@ -43,13 +43,13 @@ public class MenuOptionBlocker {
         }
 
         if (EAT_MENU_OPTIONS.contains(option) && !plugin.isUnlocked("Food")) {
-            plugin.ShowPluginChat("<col=ff0000><b>Eating food locked!</b></col> You haven't unlocked the ability to eat food yet!", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Eating food locked!</b></col> You haven't unlocked the ability to eat food yet!", 2394);
             event.consume();
             return;
         }
 
         if (POTIONS_MENU_OPTIONS.contains(option) && !plugin.isUnlocked("Potions")) {
-            plugin.ShowPluginChat("<col=ff0000><b>Drinking potions locked!</b></col> You haven't unlocked the ability to drink potions yet!", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Drinking potions locked!</b></col> You haven't unlocked the ability to drink potions yet!", 2394);
             event.consume();
         }
 
@@ -58,7 +58,7 @@ public class MenuOptionBlocker {
             if (event.getMenuAction() == MenuAction.CC_OP ||
                     event.getMenuAction() == MenuAction.CC_OP_LOW_PRIORITY) {
                 event.consume();
-                plugin.ShowPluginChat("<col=ff0000><b>Teleports locked</b></col> Using the spellbook to teleport is not unlocked yet.", true);
+                plugin.ShowPluginChat("<col=ff0000><b>Teleports locked</b></col> Using the spellbook to teleport is not unlocked yet.", 2394);
             }
             return;
         }
@@ -66,14 +66,14 @@ public class MenuOptionBlocker {
         // Check minigame teleports
         if (isMinigameTeleportOption(option, target) && !plugin.isUnlocked("MinigameTeleports")) {
             event.consume();
-            plugin.ShowPluginChat("<col=ff0000><b>Minigame teleports locked</b></col> Teleporting to minigames is not unlocked yet.", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Minigame teleports locked</b></col> Teleporting to minigames is not unlocked yet.", 2394);
             return;
         }
 
         // Check agility shortcuts
         if (isAgilityShortcut(event.getId()) && !plugin.isUnlocked("AgilityShortcuts")) {
             event.consume();
-            plugin.ShowPluginChat("<col=ff0000><b>Agility shortcuts locked</b></col> Using agility shortcuts is not unlocked yet.", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Agility shortcuts locked</b></col> Using agility shortcuts is not unlocked yet.", 2394);
             return;
         }
 
@@ -81,7 +81,7 @@ public class MenuOptionBlocker {
         // TODO: Check if working on all fairy ring types
         if (isFairyRing(event.getId()) && !plugin.isUnlocked("FairyRings")) {
             event.consume();
-            plugin.ShowPluginChat("<col=ff0000><b>Fairy ring usage locked</b></col> Using fairy rings is not unlocked yet.", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Fairy ring usage locked</b></col> Using fairy rings is not unlocked yet.", 2394);
             return;
         }
 
@@ -89,14 +89,14 @@ public class MenuOptionBlocker {
         // TODO: Check if working on all spririt tree types
         if (isSpiritTree(option, target) && !plugin.isUnlocked("SpiritTrees")) {
             event.consume();
-            plugin.ShowPluginChat("<col=ff0000><b>Spirit tree usage locked</b></col> Using spirit tree is not unlocked yet.", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Spirit tree usage locked</b></col> Using spirit tree is not unlocked yet.", 2394);
             return;
         }
 
         // Check Charter ships shortcuts
         if (isChartership(option, target) && !plugin.isUnlocked("CharterShips")) {
             event.consume();
-            plugin.ShowPluginChat("<col=ff0000><b>Charter ships usage locked</b></col> Using charter ships is not unlocked yet.", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Charter ships usage locked</b></col> Using charter ships is not unlocked yet.", 2394);
             return;
         }
 
@@ -104,7 +104,7 @@ public class MenuOptionBlocker {
         // TODO: Check if working
         if (isBaloonTransport(option,target) && !plugin.isUnlocked("BalloonTransport")) {
             event.consume();
-            plugin.ShowPluginChat("<col=ff0000><b>Balloon transport usage locked</b></col> Using balloon transport is not unlocked yet.", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Balloon transport usage locked</b></col> Using balloon transport is not unlocked yet.", 2394);
             return;
         }
 
@@ -112,7 +112,7 @@ public class MenuOptionBlocker {
         // TODO: Check if working
         if (isGnomeGlider(option,target) && !plugin.isUnlocked("GnomeGliders")) {
             event.consume();
-            plugin.ShowPluginChat("<col=ff0000><b>Gnome glider usage locked</b></col> Using gnome glider is not unlocked yet.", true);
+            plugin.ShowPluginChat("<col=ff0000><b>Gnome glider usage locked</b></col> Using gnome glider is not unlocked yet.", 2394);
         }
     }
 
@@ -197,7 +197,7 @@ public class MenuOptionBlocker {
         }
 
         if (!plugin.isUnlocked("EQUIP_" + slot)) {
-            plugin.ShowPluginChat("<col=ff0000><b>"+slot.getDisplayName() +" slot locked!</b></col> Unlock this slot to be able to equip.", true);
+            plugin.ShowPluginChat("<col=ff0000><b>"+slot.getDisplayName() +" slot locked!</b></col> Unlock this slot to be able to equip.", 2394);
             event.consume();
         }
     }

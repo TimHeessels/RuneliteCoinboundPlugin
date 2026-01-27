@@ -11,8 +11,9 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.util.Text;
 
-import static com.rogueliteplugin.data.QuestYearList.QUEST_BY_NAME;
-import static com.rogueliteplugin.data.QuestYearList.QUEST_YEAR;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class QuestBlocker {
 
@@ -28,6 +29,14 @@ public class QuestBlocker {
 
     @Inject
     private RoguelitePlugin plugin;
+
+    private static final Map<String, Quest> QUEST_BY_NAME = Arrays.stream(Quest.values())
+            .filter(q -> q.getName() != null)
+            .collect(Collectors.toMap(
+                    q -> q.getName().toLowerCase(),
+                    q -> q,
+                    (existing, replacement) -> existing
+            ));
 
     @Subscribe
     public void onScriptPostFired(ScriptPostFired event) {
@@ -98,12 +107,10 @@ public class QuestBlocker {
             boolean unlocked = true;
             if (applyPrefixes) {
                 String questName = clean.split("\\(")[0].trim();
-                String questYear = getQuestYear(questName);
-
-                if (questYear == null)
-                    continue;
-
-                unlocked = plugin.isUnlocked("Quests" + questYear);
+                Quest questID = QUEST_BY_NAME.get(questName.toLowerCase());
+                if (questID != null) {
+                    unlocked = plugin.isUnlocked("Quests" + questID.name());
+                }
             }
 
             String displayText;
@@ -121,10 +128,5 @@ public class QuestBlocker {
         clientThread.invokeLater(() ->
                 clientThread.invokeLater(this::clearQuestPrefixes)
         );
-    }
-
-    private String getQuestYear(String questName) {
-        Quest quest = QUEST_BY_NAME.get(questName);
-        return quest == null ? null : QUEST_YEAR.get(quest);
     }
 }

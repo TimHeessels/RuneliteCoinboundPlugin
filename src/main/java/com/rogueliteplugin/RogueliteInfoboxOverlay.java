@@ -31,22 +31,34 @@ public class RogueliteInfoboxOverlay extends Overlay {
                     .left("Welcome to the roguelite game mode. You can start the game by reading the rules and then opening a booster pack in the side panel.")
                     .build());
         }
+        long peakCoins = plugin.getPeakCoins();
+        int packsBought = plugin.getPackBought();
 
-        long barProgress = plugin.getCurrentPoints();
-        long barGoal = plugin.cardPackCost;
+        long previous = plugin.peakCoinsRequiredForPack(packsBought);
+        long next = plugin.peakCoinsRequiredForPack(packsBought + 1);
+
+        long barGoal = next - previous;
+        long barProgress = Math.max(0, peakCoins - previous);
+
+        barProgress = Math.min(barProgress, barGoal);
+        if (plugin.getAvailablePacksToBuy() > 0)
+        {
+            barProgress = barGoal;
+        }
+
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Current points")
+                .left("Next pack at")
                 .right("Available packs")
                 .build());
         panelComponent.getChildren().add(LineComponent.builder()
-                .left(plugin.getCurrentPoints() + "/" + plugin.cardPackCost)
-                .right(plugin.getAvailablePacks() + "")
+                .left(next + " gp")
+                .right(plugin.getAvailablePacksToBuy() + "")
                 .build());
 
         panelComponent.getChildren().add(LineComponent.builder().build());
 
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Point progress towards next pack")
+                .left("Progress towards next pack")
                 .build());
         ProgressBarComponent bar = new ProgressBarComponent();
         bar.setMinimum(0);

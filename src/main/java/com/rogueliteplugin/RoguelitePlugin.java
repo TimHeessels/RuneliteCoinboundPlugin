@@ -84,9 +84,6 @@ public class RoguelitePlugin extends Plugin {
     @Inject
     private SkillIconManager skillIconManager;
 
-    @Inject
-    private NewItemDetection newItemDetection;
-
     private Map<Skill, Integer> previousXp = new EnumMap<>(Skill.class);
 
     private final RogueliteInfoboxOverlay overlay = new RogueliteInfoboxOverlay(this);
@@ -132,20 +129,21 @@ public class RoguelitePlugin extends Plugin {
         return unlockedIds;
     }
 
+    public int getPackBought() {
+        return config.packsBought();
+    }
+
+    public int getPeakCoins() {
+        return config.peakWealth();
+    }
+
     public boolean isInMemberWorld() {
         return client.getWorldType().contains(WorldType.MEMBERS);
     }
 
-    public String getSeenItemIds() {
-        return config.seenItemIds();
-    }
-
-    public void setSeenItemsIds(String value) {
-        config.seenItemIds(value);
-    }
-
-    int cardPackCost = 8;
     public int replaceItemID = ItemID.LEAFLET_DROPPER_FLYER;
+
+    public long currentCoins = 0;
 
     @Provides
     RogueliteConfig provideConfig(ConfigManager configManager) {
@@ -159,9 +157,6 @@ public class RoguelitePlugin extends Plugin {
         UnlockDefinitions.registerAll(unlockRegistry, skillIconManager, this);
 
         overlayManager.add(overlay);
-
-        newItemDetection.setPlugin(this);
-        eventBus.register(newItemDetection);
 
         eventBus.register(skillBlocker);
         eventBus.register(questBlocker);
@@ -234,8 +229,6 @@ public class RoguelitePlugin extends Plugin {
         log.debug("Roguelite plugin stopped!");
         previousXp.clear();
         overlayManager.remove(overlay);
-
-        eventBus.unregister(newItemDetection);
         eventBus.unregister(skillBlocker);
         eventBus.unregister(questBlocker);
         eventBus.unregister(equipmentSlotBlocker);
@@ -266,6 +259,43 @@ public class RoguelitePlugin extends Plugin {
 
         RefreshAllBlockers();
     }
+
+    @Subscribe
+    public void onItemContainerChanged(ItemContainerChanged event)
+    {
+        if (event.getContainerId() != InventoryID.INVENTORY.getId())
+        {
+            return;
+        }
+
+        currentCoins = getCoinsInInventory();
+
+        if (currentCoins > config.peakWealth())
+        {
+            config.peakWealth(currentCoins);
+            ShowPluginChat("<col=329114><b>New wealth bracket reached! </b></col> You can open a new booster pack!", 3924);
+        }
+    }
+
+    public long getCoinsInInventory()
+    {
+        ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+        if (inventory == null)
+        {
+            return 0;
+        }
+
+        for (Item item : inventory.getItems())
+        {
+            if (item.getId() == ItemID.COINS)
+            {
+                return item.getQuantity();
+            }
+        }
+
+        return 0;
+    }
+
 
     private static final int EXPECTED_SKILL_COUNT = 23;
     public boolean statsInitialized = false;
@@ -304,19 +334,33 @@ public class RoguelitePlugin extends Plugin {
         }
     }
 
-    public int getAvailablePacks() {
-        return getCurrentPoints() / cardPackCost; //Packs cost 8 points each
+    public long peakCoinsRequiredForPack(int packIndex)
+    {
+        // packIndex starts at 1
+        double A = 5.0;
+        double B = 2.1;
+
+        return (long) Math.floor(A * Math.pow(packIndex, B));
     }
 
-    public int getCurrentPoints() {
-        return config.currentPoints();
+    public int getTotalUnlockedPacks(long peakCoins)
+    {
+        int pack = 1;
+
+        while (true)
+        {
+            if (peakCoins < peakCoinsRequiredForPack(pack))
+            {
+                return pack - 1;
+            }
+            pack++;
+        }
     }
 
-    public void newItemAcquired(String name, int points) {
-        ShowPluginChat("<col=00ff00><b>" + name + " acquired!</col></b> gained " + points + " points.",
-                false
-        );
-        config.currentPoints(config.currentPoints() + points);
+    public int getAvailablePacksToBuy()
+    {
+        int unlocked = getTotalUnlockedPacks(config.peakWealth());
+        return Math.max(0, unlocked - config.packsBought());
     }
 
     private void showChatMessage(String message) {
@@ -329,10 +373,10 @@ public class RoguelitePlugin extends Plugin {
 
         clientThread.invoke(() ->
         {
-            if (getAvailablePacks() < 1)
+            if (getAvailablePacksToBuy() < 1)
                 return;
 
-            config.currentPoints(config.currentPoints() - cardPackCost);
+            config.packsBought(config.packsBought() + 1);
 
             if (!statsInitialized) {
                 //TODO: Notify user to relog
@@ -524,14 +568,15 @@ public class RoguelitePlugin extends Plugin {
         log.debug(textToDebug);
     }
 
-    public void ShowPluginChat(String message, boolean isError) {
+
+    public void ShowPluginChat(String message, int soundEffect) {
         client.addChatMessage(
                 ChatMessageType.ENGINE,
                 "",
                 "[<col=6069df>Roguelite Mode</col>] " + message,
                 null
         );
-        if (isError)
-            client.playSoundEffect(2394);
+        if (soundEffect != -1)
+            client.playSoundEffect(soundEffect );
     }
 }

@@ -4,6 +4,7 @@ import com.rogueliteplugin.RoguelitePlugin;
 import com.rogueliteplugin.data.ClueTier;
 import com.rogueliteplugin.data.ShopCategory;
 import com.rogueliteplugin.requirements.*;
+import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import net.runelite.client.game.SkillIconManager;
 
@@ -27,7 +28,7 @@ public final class UnlockDefinitions {
         registerMinigames(registry, plugin);
         registerBosses(registry);
         registerTransport(registry);
-        registerQuestTiers(registry);
+        registerQuests(registry);
         registerEquipmentSlots(registry);
         registerConsumables(registry);
     }
@@ -106,11 +107,11 @@ public final class UnlockDefinitions {
                 reqs.add(new MemberRequirement());
 
             switch (skill) {
-                case SAILING: //Needs pandemonium quest, which released in 2025.
-                    reqs.add(new UnlockIDRequirement("Quests2025", registry));
+                case SAILING: //Needs pandemonium quest
+                    reqs.add(new UnlockIDRequirement("Quests"+Quest.PANDEMONIUM, registry));
                     break;
-                case HERBLORE: //Needs druidic ritual quest, which released in 2002.
-                    reqs.add(new UnlockIDRequirement("Quests2002", registry));
+                case HERBLORE: //Needs druidic ritual quest
+                    reqs.add(new UnlockIDRequirement("Quests"+Quest.DRUIDIC_RITUAL, registry));
                     break;
             }
 
@@ -121,51 +122,43 @@ public final class UnlockDefinitions {
     }
 
     private static void registerInventoryUnlocks(UnlockRegistry registry) {
-        Integer previousRow = null;
+        Integer previousSlot = null;
 
-        for (int i = 2; i < 8; i++) {
+        for (int i = 1; i < 28; i++) {
             List<AppearRequirement> reqs = new ArrayList<>();
 
-            if (previousRow != null)
-                reqs.add(new UnlockIDRequirement("InventorySlots" + previousRow, registry));
+            if (previousSlot != null)
+                reqs.add(new UnlockIDRequirement("InventorySlot" + previousSlot, registry));
 
             registry.register(
                     new InventorySpaceUnlock(
-                            "InventoryRow" + i,
-                            "Inventory row " + i,
+                            "InventorySlot" + (i + 1),
+                            "Inventory slot " + (i + 1),
                             IconLoader.load("inventory/inventoryExpansion.png"),
-                            "Access to more inventory space.",
+                            "Access to another inventory slot.",
                             reqs
                     )
             );
-            previousRow = i;
+            previousSlot = i;
         }
     }
 
-    private static void registerQuestTiers(UnlockRegistry registry) {
-        int[] QUEST_YEARS = {
-                2001, 2002, 2003, 2004, 2005, 2006, 2007,
-                2016, 2017, 2018, 2019, 2020,
-                2021, 2022, 2023, 2024, 2025 //Add 2026 when next quest is released
-        };
-        Integer previousYear = null;
+    private static void registerQuests(UnlockRegistry registry) {
+        for (Quest quest : Quest.values()) {
 
-        for (int year : QUEST_YEARS) {
+            //TODO: Add requirements for quests that need other quests/items/skills etc.
+            //TODO: Add member requirement for members only quests
+
             List<AppearRequirement> reqs = new ArrayList<>();
-
-            if (previousYear != null)
-                reqs.add(new UnlockIDRequirement("Quests" + previousYear, registry));
-
             registry.register(
                     new QuestUnlock(
-                            "Quests" + year,
-                            "Quests released in " + year,
+                            "Quests" + quest,
+                            quest.getName() ,
                             IconLoader.load("quests/quest_icon.png"),
-                            "Access to all quests released in " + year + ".",
+                            "Access to " + quest.getName(),
                             reqs
                     )
             );
-            previousYear = year;
         }
     }
 
