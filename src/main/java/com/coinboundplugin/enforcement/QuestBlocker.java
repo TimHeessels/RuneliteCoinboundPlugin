@@ -1,0 +1,132 @@
+package com.coinboundplugin.enforcement;
+
+import com.google.inject.Inject;
+import com.coinboundplugin.CoinboundPlugin;
+import net.runelite.api.Client;
+import net.runelite.api.Quest;
+import net.runelite.api.ScriptID;
+import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.widgets.*;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.util.Text;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class QuestBlocker {
+
+    private static final int QUEST_LIST_REBUILD_SCRIPT = 2646;
+    private static final String GRAY_TAG = "<col=9f9f9f>";
+    private static final String END_TAG = "</col>";
+
+    @Inject
+    private Client client;
+
+    @Inject
+    private ClientThread clientThread;
+
+    @Inject
+    private CoinboundPlugin plugin;
+
+    private static final Map<String, Quest> QUEST_BY_NAME = Arrays.stream(Quest.values())
+            .filter(q -> q.getName() != null)
+            .collect(Collectors.toMap(
+                    q -> q.getName().toLowerCase(),
+                    q -> q,
+                    (existing, replacement) -> existing
+            ));
+
+    @Subscribe
+    public void onScriptPostFired(ScriptPostFired event) {
+        int id = event.getScriptId();
+        if (id != ScriptID.QUESTLIST_INIT && id != QUEST_LIST_REBUILD_SCRIPT) {
+            return;
+        }
+        refreshAll();
+    }
+
+    public void refreshAll() {
+        clientThread.invokeLater(() ->
+                clientThread.invokeLater(this::applyQuestPrefixes)
+        );
+    }
+
+    private void applyQuestPrefixes() {
+        buildQuestList(true);
+    }
+
+    private void clearQuestPrefixes() {
+        buildQuestList(false);
+    }
+
+    private void buildQuestList(boolean applyPrefixes) {
+        Widget root = client.getWidget(WidgetInfo.QUESTLIST_CONTAINER);
+        if (root == null) {
+            return;
+        }
+
+        Widget[] s1 = root.getStaticChildren();
+        if (s1 == null || s1.length < 2) {
+            return;
+        }
+
+        Widget[] s2 = s1[1].getStaticChildren();
+        if (s2 == null || s2.length < 2) {
+            return;
+        }
+
+        Widget[] s3 = s2[1].getStaticChildren();
+        if (s3 == null || s3.length < 1) {
+            return;
+        }
+
+        Widget scrollContent = s3[0];
+        Widget[] entries = scrollContent.getDynamicChildren();
+        if (entries == null) {
+            return;
+        }
+
+        for (Widget entry : entries) {
+            if (entry == null || entry.getType() != WidgetType.TEXT) {
+                continue;
+            }
+
+            String text = entry.getText();
+            if (text == null || text.isEmpty()) {
+                continue;
+            }
+
+            String clean = Text.removeTags(text).trim();
+            if (clean.startsWith("-")) {
+                // Skip headers
+                continue;
+            }
+
+            boolean unlocked = true;
+            if (applyPrefixes) {
+                String questName = clean.split("\\(")[0].trim();
+                Quest questID = QUEST_BY_NAME.get(questName.toLowerCase());
+                if (questID != null) {
+                    unlocked = plugin.isUnlocked("Quests" + questID.name());
+                }
+            }
+
+            String displayText;
+            if (unlocked)
+                displayText = clean; // no color override
+            else
+                displayText = GRAY_TAG + "[X] " + clean + END_TAG;
+
+            entry.setText(displayText);
+            entry.revalidate();
+        }
+    }
+
+    public void clearAll() {
+        clientThread.invokeLater(() ->
+                clientThread.invokeLater(this::clearQuestPrefixes)
+        );
+    }
+}
