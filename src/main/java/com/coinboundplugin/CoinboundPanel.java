@@ -18,6 +18,8 @@ import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
@@ -212,6 +214,15 @@ public class CoinboundPanel extends PluginPanel {
 
                 JLabel textLabel = new JLabel(unlock.getDisplayName());
                 textLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                textLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                textLabel.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        if (SwingUtilities.isLeftMouseButton(e)) {
+                            plugin.toggleUnlock(unlock.getId());
+                        }
+                    }
+                });
 
                 if (!unlocked) {
                     if (meetsRequirements)

@@ -30,11 +30,59 @@ public class MenuOptionBlocker {
     List<String> EAT_MENU_OPTIONS = Arrays.asList("eat", "consume");  //TODO: Check if more needed
     List<String> POTIONS_MENU_OPTIONS = Arrays.asList("drink"); //TODO: Check if more needed
     List<String> JEWELERY_MENU_OPTIONS = Arrays.asList("necklace", "ring", "amulet", "bracelet");
+    private static final String[] TELEPORT_OPTIONS = {
+            "Barbarian Outpost",
+            "Burthorpe",
+            "Tears of Guthix",
+            "Corporeal Beast",
+            "Wintertodt Camp",
+            "Emir's Arena",
+            "Ferox Enclave",
+            "Castle Wars",
+            "Fortis Colosseum",
+            "Warriors' Guild",
+            "Champions' Guild",
+            "Monastery",
+            "Ranging Guild",
+            "Fishing Guild",
+            "Mining Guild",
+            "Crafting Guild",
+            "Cooking Guild",
+            "Woodcutting Guild",
+            "Farming Guild",
+            "Edgeville",
+            "Karamja",
+            "Draynor Village",
+            "Al Kharid",
+            "Miscellania",
+            "Grand Exchange",
+            "Falador Park",
+            "Dondakan",
+            "Slayer Tower",
+            "Fremennik Slayer Dungeon",
+            "Tarn's Lair",
+            "Stronghold Slayer Cave",
+            "Dark Beasts",
+            "Digsite",
+            "Fossil Island",
+            "Lithkren",
+            "Wizards' Tower",
+            "The Outpost",
+            "Eagles' Eyrie",
+            "Chaos Temple",
+            "Bandit Camp",
+            "Lava Maze"
+    };
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
+
         String target = event.getMenuTarget().toLowerCase();
         String option = event.getMenuOption().toLowerCase();
+        String action = event.getMenuAction().toString().toLowerCase();
+        String entryType = event.getMenuEntry().toString().toLowerCase();
+
+        plugin.Debug("target: '" + target + "'   option: '" + option + "'   action: '" + action + "'   entryType: '" + entryType + "'");
 
         if (EQUIP_MENU_OPTIONS.contains(option)) {
             CheckIfCanEquipItem(event);
@@ -63,7 +111,7 @@ public class MenuOptionBlocker {
         }
 
         // Check jewelery teleports
-        if (isMinigameJeweleryOption(option, target) && !plugin.isUnlocked("TeleportJewelry")) {
+        if (isJeweleryOption(option, target) && !plugin.isUnlocked("TeleportJewelry")) {
             event.consume();
             plugin.ShowPluginChat("<col=ff0000><b>Jewelery teleports locked</b></col> Teleporting using jewelery is not unlocked yet.", 2394);
             return;
@@ -120,6 +168,13 @@ public class MenuOptionBlocker {
             event.consume();
             plugin.ShowPluginChat("<col=ff0000><b>Gnome glider usage locked</b></col> Using gnome glider is not unlocked yet.", 2394);
         }
+
+        // Check canoe transport
+        // TODO: Check if working
+        if (isCanoe(option, target) && !plugin.isUnlocked("Canoes")) {
+            event.consume();
+            plugin.ShowPluginChat("<col=ff0000><b>Canoes locked</b></col> Using canoes is not unlocked yet.", 2394);
+        }
     }
 
     private boolean isAgilityShortcut(int objectId) {
@@ -133,27 +188,29 @@ public class MenuOptionBlocker {
         return false;
     }
 
+    //Check for teleport but skip home teleport spells
     private boolean isTeleportSpellOption(String option, String target) {
         String tgt = target
                 .replaceAll("<.*?>", "")
                 .replaceAll("[^a-z ]", "")
                 .trim();
-
-        if (Objects.equals(target, "home"))
+        boolean isTeleport = tgt.contains("teleport") || tgt.contains("tele group");
+        if (tgt.contains("home") && isTeleport)
             return false;
-        return tgt.contains("teleport") || tgt.contains("tele group");
+        return isTeleport;
     }
 
+    //TODO: Make cleaner check here
     private boolean isMinigameTeleportOption(String option, String target) {
         if (option == null) {
             return false;
         }
-
         String opt = option.trim();
         return (opt.contains("teleport to <col=ff8040>"));
     }
 
-    private boolean isMinigameJeweleryOption(String option, String target) {
+    //Checks for both 'rub' and 'teleport' options on jewelry
+    private boolean isJeweleryOption(String option, String target) {
         if (option == null) {
             return false;
         }
@@ -165,7 +222,15 @@ public class MenuOptionBlocker {
                 break;
             }
         }
-        return (opt.contains("rub") && hasJewelery);
+
+        boolean isDirectTeleportOption = false;
+        for (String teleportOptions : TELEPORT_OPTIONS) {
+            if (opt.toLowerCase().contains(teleportOptions.toLowerCase())) {
+                isDirectTeleportOption = true;
+                break;
+            }
+        }
+        return ((opt.contains("rub") && hasJewelery)) || (target.equals("") && isDirectTeleportOption);
     }
 
     private boolean isFairyRing(int objectId) {
@@ -195,6 +260,10 @@ public class MenuOptionBlocker {
         if (!target.contains("errdo") && !target.contains("dalbur") && !target.contains("avlafrim") && !target.contains("shoracks"))
             return false;
         return (option.contains("glider"));
+    }
+
+    private boolean isCanoe(String option, String target) {
+        return (option.contains("shape-canoe"));
     }
 
     void CheckIfCanEquipItem(MenuOptionClicked event) {

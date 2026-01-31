@@ -265,8 +265,8 @@ public class CoinboundPlugin extends Plugin {
         return null;
     }
 
-    void SetupCardButton(int buttonIndex, String unlockName,String typeName, String description, BufferedImage image, PackOption option) {
-        cardPickOverlay.setButton(buttonIndex, unlockName , typeName,description , image, () -> {
+    void SetupCardButton(int buttonIndex, String unlockName, String typeName, String description, BufferedImage image, PackOption option) {
+        cardPickOverlay.setButton(buttonIndex, unlockName, typeName, description, image, () -> {
             clientThread.invoke(() -> onPackOptionSelected(option));
         });
     }
@@ -435,11 +435,17 @@ public class CoinboundPlugin extends Plugin {
         }
 
         int dist = pos.distanceTo(WorldOrgin);
-
         boolean isInside = dist <= wanderRadius;
 
+        if (!isOverworldSurface(player))
+            isInside = false;
+
+        WorldView worldView = client.getTopLevelWorldView();
+        if (worldView == null)
+            isInside = false;
+
         if (wasInside && !isInside) {
-            ShowPluginChat("<col=ff0000><b>Your house arrest device starts beeping!</b></col> Return closer to Lumbridge or unlock more distance.", 2394);
+            ShowPluginChat("<col=ff0000><b>Your house arrest device starts beeping!</b></col> Return to your unlocked area or unlock more distance.", 2394);
         } else if (!wasInside && isInside) {
             ShowPluginChat("Your house arrest device stops beeping.", -1);
         }
@@ -573,7 +579,7 @@ public class CoinboundPlugin extends Plugin {
     public void onPackOptionSelected(PackOption option) {
         clientThread.invoke(() ->
         {
-            ShowPluginChat("<col=329114><b>"+option.getDisplayName()+" unlocked! </b></col> ", 2308);
+            ShowPluginChat("<col=329114><b>" + option.getDisplayName() + " unlocked! </b></col> ", 2308);
             option.onChosen(this);
 
             packChoiceState = PackChoiceState.NONE;
@@ -647,11 +653,38 @@ public class CoinboundPlugin extends Plugin {
         return unlockedIds.contains(unlock.getId());
     }
 
+    public void toggleUnlock(String unlockID) {
+        if (isUnlocked(unlockID)) {
+            removeUnlock(unlockID);
+        } else {
+            unlock(unlockID);
+        }
+    }
+
     public void unlock(String unlockID) {
         if (unlockedIds.add(unlockID)) {
             saveUnlocked();
             RefreshAllBlockers();
         }
+    }
+
+    public String removeUnlock(String unlockID) {
+
+        if (unlockedIds.isEmpty())
+            return null;
+
+        if (!unlockedIds.contains(unlockID))
+            return null;
+
+        unlockedIds.remove(unlockID);
+        saveUnlocked();
+
+        // Refresh UI and blockers
+        RefreshAllBlockers();
+
+        // Get the unlock's display name
+        Unlock unlock = unlockRegistry.get(unlockID);
+        return unlock != null ? unlock.getDisplayName() : unlockID;
     }
 
     public String removeRandomUnlock() {
@@ -665,16 +698,7 @@ public class CoinboundPlugin extends Plugin {
         // Pick random unlock
         String randomUnlockId = unlockList.get(random.nextInt(unlockList.size()));
 
-        // Remove it
-        unlockedIds.remove(randomUnlockId);
-        saveUnlocked();
-
-        // Refresh UI and blockers
-        RefreshAllBlockers();
-
-        // Get the unlock's display name
-        Unlock unlock = unlockRegistry.get(randomUnlockId);
-        return unlock != null ? unlock.getDisplayName() : randomUnlockId;
+        return removeUnlock(randomUnlockId);
     }
 
     private void generatePackOptions() {
@@ -734,7 +758,6 @@ public class CoinboundPlugin extends Plugin {
         log.debug(textToDebug);
     }
 
-
     public void ShowPluginChat(String message, int soundEffect) {
         client.addChatMessage(
                 ChatMessageType.ENGINE,
@@ -744,6 +767,19 @@ public class CoinboundPlugin extends Plugin {
         );
         if (soundEffect != -1)
             client.playSoundEffect(soundEffect);
+    }
+
+    public boolean isOverworldSurface(Player player) {
+        if (player == null) {
+            return false;
+        }
+
+        if (player.getWorldLocation().getPlane() != 0) {
+            return false;
+        }
+
+        WorldView worldView = client.getTopLevelWorldView();
+        return worldView != null && !worldView.isInstance();
     }
 }
 

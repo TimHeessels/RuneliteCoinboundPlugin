@@ -8,7 +8,6 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.api.coords.LocalPoint;
 
 import java.awt.*;
@@ -25,7 +24,7 @@ public class FogOverlay extends Overlay {
         this.client = client;
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
-        setPriority(OverlayPriority.LOW);
+        setPriority(Overlay.PRIORITY_LOW);
     }
 
     @Override
@@ -44,18 +43,21 @@ public class FogOverlay extends Overlay {
             return;
         }
 
-        WorldPoint origin = plugin.WorldOrgin;
-        int r = plugin.wanderRadius;
-
         int plane = player.getWorldLocation().getPlane();
 
-        // Only apply fog on surface
-        if (plane != 0)
+        // Only apply fog on overworld surface (no instances, no upstairs/downstairs)
+        if (!plugin.isOverworldSurface(player))
         {
             return;
         }
 
-        Scene scene = client.getScene();
+        WorldView worldView = client.getTopLevelWorldView();
+        if (worldView == null)
+        {
+            return;
+        }
+
+        Scene scene = worldView.getScene();
         Tile[][][] tiles = scene.getTiles();
 
         if (tiles == null || tiles[plane] == null)
@@ -84,8 +86,8 @@ public class FogOverlay extends Overlay {
                 WorldPoint wp = tile.getWorldLocation();
 
                 boolean inside =
-                        Math.abs(wp.getX() - origin.getX()) <= r &&
-                                Math.abs(wp.getY() - origin.getY()) <= r;
+                        Math.abs(wp.getX() - plugin.WorldOrgin.getX()) <= plugin.wanderRadius &&
+                                Math.abs(wp.getY() - plugin.WorldOrgin.getY()) <= plugin.wanderRadius;
 
                 if (inside)
                 {

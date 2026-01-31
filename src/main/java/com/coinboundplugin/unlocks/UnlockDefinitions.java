@@ -59,7 +59,7 @@ public final class UnlockDefinitions {
                             reqs
                     )
             );
-            previousSlot = i;
+            previousSlot = i+1;
         }
 
         //Unlock all

@@ -11,7 +11,6 @@ import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.OverlayPriority;
 
 import java.awt.*;
 
@@ -28,7 +27,7 @@ public class FogMapOverlay extends Overlay {
         this.client = client;
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
-        setPriority(OverlayPriority.LOW);
+        setPriority(Overlay.PRIORITY_LOW);
     }
 
     @Override
@@ -40,6 +39,10 @@ public class FogMapOverlay extends Overlay {
     }
 
     private void drawMapFog(Graphics2D graphics) {
+        if (!plugin.isOverworldSurface(client.getLocalPlayer())) {
+            return;
+        }
+
         Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
         if (map == null) {
             return;
