@@ -1,7 +1,7 @@
 package com.coinboundplugin.unlocks;
 
 import com.coinboundplugin.CoinboundPlugin;
-import com.coinboundplugin.CoinboundQuestRequirement;
+import com.coinboundplugin.data.CoinboundQuestRequirement;
 import com.coinboundplugin.data.ClueTier;
 import com.coinboundplugin.data.ShopCategory;
 import com.coinboundplugin.requirements.*;
@@ -44,6 +44,15 @@ public final class UnlockDefinitions {
                         "Cast Low/High Alchemy",
                         IconLoader.load("other/Alchemy.png"),
                         "Allows casting the Low and High Alchemy spell.",
+                        List.of(new UnlockIDRequirement("SKILL_" + Skill.MAGIC, registry))
+                )
+        );
+        registry.register(
+                new Other(
+                        "Enchant",
+                        "Cast Enchanting items",
+                        IconLoader.load("other/Enchant.png"),
+                        "Allows enchanting items.",
                         List.of(new UnlockIDRequirement("SKILL_" + Skill.MAGIC, registry))
                 )
         );

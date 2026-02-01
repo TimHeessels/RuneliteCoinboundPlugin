@@ -9,9 +9,10 @@ public enum UnlockType
     Clues,
     Bosses,
     Quests,
-    Consumable,
+    Restoration,
     InventorySlots,
     EquipmentSlots,
+    Prayers,
     Other
 }
 

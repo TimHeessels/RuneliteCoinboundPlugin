@@ -23,7 +23,7 @@ public class ResorationUnlock implements Unlock {
 
     @Override
     public UnlockType getType() {
-        return UnlockType.Consumable;
+        return UnlockType.Restoration;
     }
 
     @Override

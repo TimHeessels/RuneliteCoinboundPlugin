@@ -2,7 +2,6 @@ package com.coinboundplugin;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Type;
 import java.util.*;
 import javax.inject.Inject;
 import javax.swing.*;
@@ -10,22 +9,19 @@ import javax.swing.*;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
+import com.coinboundplugin.save.AccountManager;
+import com.coinboundplugin.save.SaveManager;
+import com.coinboundplugin.data.*;
 import com.coinboundplugin.overlays.*;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.coinboundplugin.data.PackChoiceState;
 import com.google.inject.Provides;
-import com.coinboundplugin.data.UnlockType;
 import com.coinboundplugin.enforcement.*;
 import com.coinboundplugin.pack.PackOption;
-import com.coinboundplugin.pack.SerializablePackOption;
 import com.coinboundplugin.pack.UnlockPackOption;
 import com.coinboundplugin.requirements.AppearRequirement;
 import com.coinboundplugin.unlocks.*;
+import lombok.Getter;
 import net.runelite.api.*;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
@@ -81,6 +77,10 @@ public class CoinboundPlugin extends Plugin {
     @Inject
     private CoinboundConfig config;
 
+    public CoinboundConfig getConfig() {
+        return config;
+    }
+
     @Inject
     private ConfigManager configManager;
 
@@ -89,7 +89,8 @@ public class CoinboundPlugin extends Plugin {
 
     private final Map<Skill, Integer> previousXp = new EnumMap<>(Skill.class);
 
-    private final CoinboundInfoboxOverlay overlay = new CoinboundInfoboxOverlay(this);
+    @Inject
+    private CoinboundInfoboxOverlay overlay;
 
     @Inject
     private InventoryBlocker inventoryBlocker;
@@ -121,41 +122,37 @@ public class CoinboundPlugin extends Plugin {
     @Inject
     SpecialAttackOverlay specialAttackOverlay;
 
+    @Inject
+    private AccountManager accountManager;
+    @Inject
+    private SaveManager saveManager;
+
     private CoinboundPanel swingPanel;
     private NavigationButton navButton;
 
     private final Random random = new Random();
 
-    private PackChoiceState packChoiceState = PackChoiceState.NONE;
+    public SetupStage getSetupStage() {
+        return saveManager.get().setupStage;
+    }
 
     public PackChoiceState getPackChoiceState() {
-        return packChoiceState;
+        return saveManager.get().packChoiceState;
     }
-
-    private List<PackOption> currentPackOptions = List.of();
 
     public List<PackOption> getCurrentPackOptions() {
-        return currentPackOptions;
+        return saveManager.get().currentPackOptions;
     }
 
+    @Getter
     private UnlockRegistry unlockRegistry;
 
-    public UnlockRegistry getUnlockRegistry() {
-        return unlockRegistry;
-    }
-
-    private final Set<String> unlockedIds = new HashSet<>();
-
     public Set<String> getUnlockedIds() {
-        return unlockedIds;
+        return saveManager.get().unlockedIds;
     }
 
     public int getPackBought() {
-        return config.packsBought();
-    }
-
-    public int getPeakCoins() {
-        return config.peakWealth();
+        return saveManager.get().packsBought;
     }
 
     public boolean isInMemberWorld() {
@@ -165,16 +162,6 @@ public class CoinboundPlugin extends Plugin {
     public int replaceItemID = ItemID.LEAFLET_DROPPER_FLYER;
     public long currentCoins = 0;
     public int fillerItemsShort;
-
-    public final WorldPoint JailStartingPosition =
-            new WorldPoint(3297, 3124, 0);
-    public SetupStage gamemodeSetupState = SetupStage.DropAllItems;
-
-    public enum SetupStage {
-        DropAllItems,
-        GetFlyers,
-        SetupComplete
-    }
 
     public boolean isItemBlocked(int itemId) {
         return false; //TODO: Check if some items need to have a lock icon overlay
@@ -245,16 +232,14 @@ public class CoinboundPlugin extends Plugin {
 
     @Override
     protected void startUp() throws Exception {
+        accountManager.start(accountKey ->
+        {
+            // swap active save here
+            saveManager.onAccountChanged(accountKey);
+        });
         //Setup all unlockable stuff
         unlockRegistry = new UnlockRegistry();
         UnlockDefinitions.registerAll(unlockRegistry, skillIconManager, this);
-
-        String setupStr = config.setupStage();
-        try {
-            gamemodeSetupState = SetupStage.valueOf(setupStr);
-        } catch (IllegalArgumentException | NullPointerException e) {
-            gamemodeSetupState = SetupStage.DropAllItems;
-        }
 
         overlayManager.add(overlay);
         overlayManager.add(cardPickOverlay);
@@ -273,13 +258,8 @@ public class CoinboundPlugin extends Plugin {
         eventBus.register(inventoryBlocker);
         eventBus.register(teleportBlocker);
         overlayManager.add(inventoryFillerTooltip);
-        loadUnlocked();
         loadPackOptionsFromConfig();
         RefreshAllBlockers();
-
-        //Check if HP is unlocked (it should always be unlocked)
-        if (!unlockedIds.contains("SKILL_HITPOINTS"))
-            unlock("SKILL_HITPOINTS");
 
         //Build the panel
         swingPanel = new CoinboundPanel(this);
@@ -292,6 +272,125 @@ public class CoinboundPlugin extends Plugin {
         clientToolbar.addNavigation(navButton);
 
         log.debug("Roguelite plugin started!");
+    }
+
+    @Override
+    protected void shutDown() throws Exception {
+        log.debug("Roguelite plugin stopped!");
+        previousXp.clear();
+
+        overlayManager.remove(overlay);
+        overlayManager.remove(cardPickOverlay);
+        overlayManager.remove(spellTeleportLockOverlay);
+        overlayManager.remove(itemLockOverlay);
+        overlayManager.remove(shopLockOverlay);
+        overlayManager.remove(protectionPrayerLockOverlay);
+        overlayManager.remove(specialAttackOverlay);
+        cardPickOverlay.stop();
+
+        eventBus.unregister(skillBlocker);
+        eventBus.unregister(questBlocker);
+        eventBus.unregister(equipmentSlotBlocker);
+        eventBus.unregister(shopBlocker);
+        eventBus.unregister(inventoryBlocker);
+        eventBus.unregister(teleportBlocker);
+        overlayManager.remove(inventoryFillerTooltip);
+        equipmentSlotBlocker.clearAll();
+        skillBlocker.clearAll();
+        questBlocker.clearAll();
+
+        //TODO: Clear inventory blocker (it clears on panel switch but still)
+        clientToolbar.removeNavigation(navButton);
+
+        saveManager.flushNow();
+        accountManager.stop();
+    }
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        if (!event.getGroup().equals("coinboundplugin"))
+            return;
+        log.debug("Runelite config changes!");
+
+        //Only refresh all content on actual changes
+        if (Objects.equals(event.getKey(), "packsBought") || Objects.equals(event.getKey(), "unlockedIds") || Objects.equals(event.getKey(), "peakWealth"))
+            RefreshAllBlockers();
+    }
+
+    @Subscribe
+    public void onItemContainerChanged(ItemContainerChanged event) {
+
+        if (!accountManager.isAccountReady())
+            return;
+
+        Debug("Container changed");
+        if (event.getContainerId() != InventoryID.INVENTORY.getId()) {
+            return;
+        }
+        if (saveManager.get().setupStage == SetupStage.DropAllItems) {
+            ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+            if (inventory != null) {
+                int itemCount = (int) Arrays.stream(inventory.getItems())
+                        .filter(item -> item.getId() != -1)
+                        .count();
+                Debug("Items in inventory: " + itemCount);
+                if (itemCount < 1) {
+                    saveManager.get().setupStage = SetupStage.GetFlyers;
+                    saveManager.markDirty();
+                    ShowPluginChat("<col=329114><b>All items dropped! </b></col> Please go to the Al Kharid flyererer and use the drop-trick to get flyers to fill up your inventory.", 3924);
+                }
+            }
+            return;
+        }
+
+        if (saveManager.get().setupStage != SetupStage.SetupComplete)
+            return;
+
+        currentCoins = getCoinsInInventory();
+        Debug("Current coins: " + currentCoins);
+
+        long prevPeak = saveManager.get().peakWealth;
+        if (currentCoins <= prevPeak)
+            return;
+
+        int packIndex = getPackBought() + getAvailablePacksToBuy() + 1;
+
+        int reached = 0;
+        long lastReq = 0;
+
+        // count how many thresholds are now reachable
+        while (currentCoins >= (lastReq = peakCoinsRequiredForPack(packIndex))) {
+            // only count ones you haven't already "passed" before
+            if (lastReq > prevPeak)
+                reached++;
+
+            packIndex++;
+        }
+
+        if (reached > 1) {
+            saveManager.get().peakWealth = currentCoins;
+            ShowPluginChat(
+                    "<col=329114><b>" + reached + " new brackets reached!</b></col> Latest: "
+                            + formatNumber(lastReq) + " gp. You can open new booster packs!",
+                    3924
+            );
+            saveManager.markDirty();
+        } else if (reached == 1) {
+            saveManager.get().peakWealth = currentCoins;
+            ShowPluginChat(
+                    "<col=329114><b>New bracket reached!</b></col> "
+                            + formatNumber(lastReq) + " gp. You can open new booster pack!",
+                    3924
+            );
+            saveManager.markDirty();
+        }
+    }
+
+    public String getLastUnlockDisplayName() {
+        String returnName = saveManager.get().lastUnlockedName;
+        if (Objects.equals(returnName, ""))
+            return "None";
+        return returnName;
     }
 
     void SetupCardButtons() {
@@ -348,157 +447,25 @@ public class CoinboundPlugin extends Plugin {
             swingPanel.refresh();
     }
 
-    int GetWanderRange() {
-        if (isUnlocked("HouseArrestGone"))
-            return -1;
-
-        int baseRange = 60;
-        int extraRangePerUnlock = 200;
-
-        int expansionsUnlocked = (int) unlockedIds.stream()
-                .filter(id -> id.startsWith("HouseArrestRange"))
-                .count();
-
-        return baseRange + (expansionsUnlocked * extraRangePerUnlock);
-    }
-
     private void loadPackOptionsFromConfig() {
-        String stateStr = config.packChoiceState();
-        try {
-            packChoiceState = PackChoiceState.valueOf(stateStr);
-        } catch (IllegalArgumentException e) {
-            packChoiceState = PackChoiceState.NONE;
-        }
-
-        if (packChoiceState != PackChoiceState.PACKGENERATED) {
+        if (saveManager.get().packChoiceState != PackChoiceState.PACKGENERATED) {
             return;
         }
 
         Debug("Player was choosing cards, loading from config");
 
-        String json = config.currentPackOptions();
-        Type listType = new TypeToken<List<SerializablePackOption>>() {
-        }.getType();
-        List<SerializablePackOption> serialized = new Gson().fromJson(json, listType);
-
-        if (serialized != null && !serialized.isEmpty()) {
-            currentPackOptions = serialized.stream()
-                    .map(s -> {
-                        Unlock unlock = unlockRegistry.get(s.getUnlockId());
-                        return new UnlockPackOption(unlock);
-                    })
-                    .collect(Collectors.toList());
+        if (saveManager.get().packChoiceState != null)
             SetupCardButtons();
-        }
-    }
-
-    @Override
-    protected void shutDown() throws Exception {
-        log.debug("Roguelite plugin stopped!");
-        previousXp.clear();
-
-        overlayManager.remove(overlay);
-        overlayManager.remove(cardPickOverlay);
-        overlayManager.remove(spellTeleportLockOverlay);
-        overlayManager.remove(itemLockOverlay);
-        overlayManager.remove(shopLockOverlay);
-        overlayManager.remove(protectionPrayerLockOverlay);
-        overlayManager.remove(specialAttackOverlay);
-        cardPickOverlay.stop();
-
-        eventBus.unregister(skillBlocker);
-        eventBus.unregister(questBlocker);
-        eventBus.unregister(equipmentSlotBlocker);
-        eventBus.unregister(shopBlocker);
-        eventBus.unregister(inventoryBlocker);
-        eventBus.unregister(teleportBlocker);
-        overlayManager.remove(inventoryFillerTooltip);
-        equipmentSlotBlocker.clearAll();
-        skillBlocker.clearAll();
-        questBlocker.clearAll();
-
-        //TODO: Clear inventory blocker (it clears on panel switch but still)
-        clientToolbar.removeNavigation(navButton);
-    }
-
-    @Subscribe
-    public void onConfigChanged(ConfigChanged event) {
-        if (!event.getGroup().equals("rogueliteplugin"))
-            return;
-        log.debug("Runelite config changes!");
-
-        //Only refresh all content on actual changes
-        if (Objects.equals(event.getKey(), "packsBought") || Objects.equals(event.getKey(), "unlockedIds") || Objects.equals(event.getKey(), "peakWealth"))
-            RefreshAllBlockers();
-    }
-
-    @Subscribe
-    public void onItemContainerChanged(ItemContainerChanged event) {
-
-        Debug("Container changed");
-        if (event.getContainerId() != InventoryID.INVENTORY.getId()) {
-            return;
-        }
-        if (gamemodeSetupState == SetupStage.DropAllItems) {
-            ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
-            if (inventory != null) {
-                int itemCount = (int) Arrays.stream(inventory.getItems())
-                        .filter(item -> item.getId() != -1)
-                        .count();
-                Debug("Items in inventory: " + itemCount);
-                if (itemCount < 1) {
-                    gamemodeSetupState = SetupStage.GetFlyers;
-                    configManager.setConfiguration(CoinboundConfig.GROUP, "setupStage", gamemodeSetupState.name());
-                    ShowPluginChat("<col=329114><b>All items dropped! </b></col> Please go to the Al Kharid flyererer and use the drop-trick to get flyers to fill up your inventory.", 3924);
-                }
-            }
-            return;
-        }
-
-        currentCoins = getCoinsInInventory();
-        Debug("Current coins: " + currentCoins);
-
-        long prevPeak = config.peakWealth();
-        if (currentCoins <= prevPeak)
-            return;
-
-        int packIndex = getPackBought() + getAvailablePacksToBuy() + 1;
-
-        int reached = 0;
-        long lastReq = 0;
-
-        // count how many thresholds are now reachable
-        while (currentCoins >= (lastReq = peakCoinsRequiredForPack(packIndex))) {
-            // only count ones you haven't already "passed" before
-            if (lastReq > prevPeak)
-                reached++;
-
-            packIndex++;
-        }
-
-        if (reached > 1) {
-            config.peakWealth(currentCoins);
-            ShowPluginChat(
-                    "<col=329114><b>" + reached + " new brackets reached!</b></col> Latest: "
-                            + formatNumber(lastReq) + " gp. You can open new booster packs!",
-                    3924
-            );
-        } else if (reached == 1) {
-            config.peakWealth(currentCoins);
-            ShowPluginChat(
-                    "<col=329114><b>New bracket reached!</b></col> "
-                            + formatNumber(lastReq) + " gp. You can open new booster pack!",
-                    3924
-            );
-        }
     }
 
     public void setFillerItemsShortAmount(int amount) {
+        if (!accountManager.isAccountReady())
+            return;
         fillerItemsShort = amount;
-        if (fillerItemsShort <= 0 && gamemodeSetupState == SetupStage.GetFlyers) {
+        if (fillerItemsShort <= 0 && saveManager.get().setupStage == SetupStage.GetFlyers) {
             ShowPluginChat("<col=329114><b>Inventory filled! </b></col> You're now 'free' to start your adventure!", 3924);
-            gamemodeSetupState = SetupStage.SetupComplete;
-            configManager.setConfiguration(CoinboundConfig.GROUP, "setupStage", gamemodeSetupState.name());
+            saveManager.get().setupStage = SetupStage.SetupComplete;
+            saveManager.markDirty();
             RefreshAllBlockers();
         }
     }
@@ -549,9 +516,15 @@ public class CoinboundPlugin extends Plugin {
             return;
         }
 
+        //Gained XP before account is ready, just ignore the xp I guess
+        if (!accountManager.isAccountReady())
+            return;
+
         if (!isSkillUnlocked(skill)) {
-            long newValue = delta + config.illegalXPGained();
-            config.illegalXPGained(newValue);
+            long newValue = delta + saveManager.get().illegalXPGained;
+
+            saveManager.get().illegalXPGained = newValue;
+            saveManager.markDirty();
             ShowPluginChat("<col=ff0000><b>" + skill.getName() + " locked!</b></col> You've earned XP in " + skill.getName() + " but did not have the skill unlocked!", 2394);
             ShowPluginChat("You now have a total of " + newValue + " illegal XP.", -1);
             return;
@@ -578,19 +551,21 @@ public class CoinboundPlugin extends Plugin {
     }
 
     public int getAvailablePacksToBuy() {
-        int unlocked = getTotalUnlockedPacks(config.peakWealth());
-        return Math.max(0, unlocked - config.packsBought());
+        int unlocked = getTotalUnlockedPacks(saveManager.get().peakWealth);
+        return Math.max(0, unlocked - saveManager.get().packsBought);
     }
 
     public void onBuyPackClicked() {
-        if (clientThread == null || packChoiceState == PackChoiceState.PACKGENERATED)
+        if (clientThread == null || saveManager.get().packChoiceState == PackChoiceState.PACKGENERATED)
+            return;
+
+        if (!accountManager.isAccountReady())
             return;
 
         clientThread.invoke(() ->
         {
             if (getAvailablePacksToBuy() < 1)
                 return;
-
 
             if (!statsInitialized) {
                 if (swingPanel != null) {
@@ -608,7 +583,10 @@ public class CoinboundPlugin extends Plugin {
     }
 
     private void PackBoughtSuccess() {
-        config.packsBought(config.packsBought() + 1);
+
+        //TEMP: TODO TESTING NEW SAVE SYSTEM
+        saveManager.get().packsBought++;
+        saveManager.markDirty(); //Mark dirty to save on debounce
 
         // Refresh panel UI
         if (swingPanel != null) {
@@ -629,12 +607,10 @@ public class CoinboundPlugin extends Plugin {
             ShowPluginChat("<col=329114><b>" + option.getDisplayName() + " unlocked! </b></col> ", 2308);
             option.onChosen(this);
 
-            packChoiceState = PackChoiceState.NONE;
-            currentPackOptions = List.of();
+            saveManager.get().packChoiceState = PackChoiceState.NONE;
+            saveManager.get().currentPackOptions = List.of();
 
-            //Clear active config
-            configManager.setConfiguration(CoinboundConfig.GROUP, "currentPackOptions", "[]");
-            configManager.setConfiguration(CoinboundConfig.GROUP, "packChoiceState", "NONE");
+            saveManager.markDirty();
         });
     }
 
@@ -665,24 +641,7 @@ public class CoinboundPlugin extends Plugin {
     }
 
     public boolean isSkillUnlocked(Skill skill) {
-        return unlockedIds.contains("SKILL_" + skill.name());
-    }
-
-    private void loadUnlocked() {
-        unlockedIds.clear();
-
-        String raw = config.unlockedIds();
-        if (!raw.isEmpty()) {
-            unlockedIds.addAll(Arrays.asList(raw.split(",")));
-        }
-    }
-
-    private void saveUnlocked() {
-        configManager.setConfiguration(
-                CoinboundConfig.GROUP,
-                "unlockedIds",
-                String.join(",", unlockedIds)
-        );
+        return saveManager.get().unlockedIds.contains("SKILL_" + skill.name());
     }
 
     public boolean isUnlocked(String unlockId) {
@@ -695,34 +654,44 @@ public class CoinboundPlugin extends Plugin {
     }
 
     public boolean isUnlocked(Unlock unlock) {
-        return unlockedIds.contains(unlock.getId());
+        return saveManager.get().unlockedIds.contains(unlock.getId());
     }
 
     public void toggleUnlock(String unlockID) {
         if (isUnlocked(unlockID)) {
-            removeUnlock(unlockID);
+            if (removeUnlock(unlockID) == null) {
+                ShowPluginChat("Account not ready to toggle unlocks.", -1);
+            }
         } else {
-            unlock(unlockID);
+            if (!unlock(unlockID, ""))
+                ShowPluginChat("Account not ready to toggle unlocks.", -1);
         }
     }
 
-    public void unlock(String unlockID) {
-        if (unlockedIds.add(unlockID)) {
-            saveUnlocked();
+    public boolean unlock(String unlockID, String displayName) {
+        if (!accountManager.isAccountReady())
+            return false;
+        if (saveManager.get().unlockedIds.add(unlockID)) {
+            saveManager.get().lastUnlockedName = displayName;
+            saveManager.markDirty();
             RefreshAllBlockers();
+            return true;
         }
+        return false;
     }
 
     public String removeUnlock(String unlockID) {
-
-        if (unlockedIds.isEmpty())
+        if (!accountManager.isAccountReady())
             return null;
 
-        if (!unlockedIds.contains(unlockID))
+        if (saveManager.get().unlockedIds.isEmpty())
             return null;
 
-        unlockedIds.remove(unlockID);
-        saveUnlocked();
+        if (!saveManager.get().unlockedIds.contains(unlockID))
+            return null;
+
+        saveManager.get().unlockedIds.remove(unlockID);
+        saveManager.markDirty();
 
         // Refresh UI and blockers
         RefreshAllBlockers();
@@ -732,23 +701,9 @@ public class CoinboundPlugin extends Plugin {
         return unlock != null ? unlock.getDisplayName() : unlockID;
     }
 
-    public String removeRandomUnlock() {
-        if (unlockedIds.isEmpty()) {
-            return null;
-        }
-
-        // Convert to list to enable random selection
-        List<String> unlockList = new ArrayList<>(unlockedIds);
-
-        // Pick random unlock
-        String randomUnlockId = unlockList.get(random.nextInt(unlockList.size()));
-
-        return removeUnlock(randomUnlockId);
-    }
-
     private boolean generatePackOptions() {
         List<Unlock> locked = unlockRegistry.getAll().stream()
-                .filter(u -> !unlockedIds.contains(u.getId()))
+                .filter(u -> !saveManager.get().unlockedIds.contains(u.getId()))
                 .filter(this::canAppearAsPackOption)
                 .collect(Collectors.toList());
 
@@ -757,41 +712,26 @@ public class CoinboundPlugin extends Plugin {
         int optionCount = Math.min(4, locked.size());
         Set<UnlockType> usedUnlockTypes = new HashSet<>();
 
-        currentPackOptions = new ArrayList<>(optionCount);
+        saveManager.get().currentPackOptions = new ArrayList<>(optionCount);
         for (int i = 0; i < optionCount; i++) {
             Unlock unlock = pickUnlockWithDiversityBias(locked, usedUnlockTypes);
             if (unlock == null)
                 break;
 
             usedUnlockTypes.add(unlock.getType());
-            currentPackOptions.add(new UnlockPackOption(unlock));
+            saveManager.get().currentPackOptions.add(new UnlockPackOption(unlock));
         }
 
-        int count = currentPackOptions.size();
+        int count = saveManager.get().currentPackOptions.size();
 
         if (count < 4)
             return false;
 
-        packChoiceState = PackChoiceState.PACKGENERATED;
+        saveManager.get().packChoiceState = PackChoiceState.PACKGENERATED;
         SetupCardButtons();
 
-        savePackOptionsToConfig();
+        saveManager.markDirty();
         return true;
-    }
-
-    private void savePackOptionsToConfig() {
-        List<SerializablePackOption> serializable = currentPackOptions.stream()
-                .map(opt -> {
-                    UnlockPackOption unlockOpt = (UnlockPackOption) opt;
-                    return new SerializablePackOption(
-                            unlockOpt.getUnlock().getId()
-                    );
-                })
-                .collect(Collectors.toList());
-
-        String json = new Gson().toJson(serializable);
-        configManager.setConfiguration(CoinboundConfig.GROUP, "currentPackOptions", json);
-        configManager.setConfiguration(CoinboundConfig.GROUP, "packChoiceState", packChoiceState.name());
     }
 
     private Unlock pickUnlockWithDiversityBias(

@@ -1,9 +1,6 @@
 package com.coinboundplugin;
 
-import com.coinboundplugin.data.PackChoiceState;
 import com.coinboundplugin.data.UnlockType;
-import com.coinboundplugin.pack.PackOption;
-import com.coinboundplugin.pack.UnlockPackOption;
 import com.coinboundplugin.requirements.AppearRequirement;
 import com.coinboundplugin.ui.PackOptionButton;
 import com.coinboundplugin.unlocks.*;
@@ -12,16 +9,10 @@ import net.runelite.client.ui.PluginPanel;
 import net.runelite.api.Client;
 import com.google.inject.Inject;
 
-import javax.swing.JOptionPane;
-
 import javax.swing.*;
-import javax.swing.Timer;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.URL;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 
@@ -78,34 +69,8 @@ public class CoinboundPanel extends PluginPanel {
             return;
         }
 
-        String rulesHtml = "<html>"
-                + "<b>Booster pack rules</b><br>"
-                + "Collect as many coins as you can in your inventory.<br>"
-                + "For each new wealth bracket reached, you gain a new boost pack!<br>"
-                + "Packs contain cards that allow you to unlock something<br>" +
-                "  see the list on this page to see what you currently have access to.<br>"
-                + "You can only pick one of the four cards, so pick wisely.<br>"
-                + "<b>Core rules</b><br>"
-                + "You can only perform actions that are not currently locked by the game mode, at the start of the game you cannot:<br>"
-                + "• Gain XP in any skill except hitpoints. (Hitpoints is unlocked at the start)<br>"
-                + "• Complete quests. You unlock quests per year, starting at 2002.<br>"
-                + "• Equip items. You unlock each slot seperatly.<br>"
-                + "• Buy or sell items from shopkeepers. You unlock them per shop type (E.G Platebody shops unlock all shops with platebody icon)<br>"
-                + "• Minigames. Allow you to participate and gain rewards in specific minigames.<br>"
-                + "• Opening clue boxes. (Note, you're allowed to complete the clue scroll, just not open the casket.)<br>"
-                + "• Bosses. Allow you to kill a specific boss.<br>"
-                + "• Transport options. Allow you to use transport methods like fairy rings or teleport spells.<br><br>"
-                + "<b>Tips</b><br>"
-                + "• Combat is off-limits until you unlock at least one combat skill. Hitpoints are unlocked at the start.<br>"
-                + "</html>";
-
-        rulesPanel = new
-
-                CollapsiblePanel("Rules", new JLabel(rulesHtml));
-        rulesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        content.add(Box.createVerticalStrut(6));
-        content.add(rulesPanel);
-        content.add(Box.createVerticalStrut(12));
+        content.add(new JLabel("View the github page"));
+        content.add(new JLabel("for the game mode rules."));
 
         List<Unlock> allUnlocks = new ArrayList<>(plugin.getUnlockRegistry().getAll());
 

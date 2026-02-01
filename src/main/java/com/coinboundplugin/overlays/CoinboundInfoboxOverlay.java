@@ -1,6 +1,9 @@
 package com.coinboundplugin.overlays;
 
 import com.coinboundplugin.CoinboundPlugin;
+import com.coinboundplugin.save.SaveManager;
+import com.coinboundplugin.data.SetupStage;
+import com.google.inject.Inject;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -13,27 +16,33 @@ import java.awt.*;
 public class CoinboundInfoboxOverlay extends Overlay {
     private final CoinboundPlugin plugin;
     private final PanelComponent panelComponent = new PanelComponent();
+    private final SaveManager saveManager;
 
-    public CoinboundInfoboxOverlay(CoinboundPlugin plugin) {
+    @Inject
+    public CoinboundInfoboxOverlay(CoinboundPlugin plugin, SaveManager saveManager) {
         this.plugin = plugin;
+        this.saveManager = saveManager;
         setPosition(OverlayPosition.TOP_LEFT);
         setLayer(OverlayLayer.ABOVE_SCENE);
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
+        if (!plugin.getConfig().showOverlay()) {
+            return null;
+        }
         panelComponent.getChildren().clear();
         panelComponent.setPreferredSize(new Dimension(250, 0));
 
         //Display welcome message on first launch
-        if (plugin.gamemodeSetupState == CoinboundPlugin.SetupStage.DropAllItems) {
+        if (saveManager.get().setupStage == SetupStage.DropAllItems) {
             panelComponent.getChildren().add(LineComponent.builder()
                     .left("Welcome to the Coinbound game mode. Please drop all items you got from tutorial island.")
                     .build());
             return panelComponent.render(graphics);
         }
         //Go fill up inventory with flyers
-        if (plugin.gamemodeSetupState == CoinboundPlugin.SetupStage.GetFlyers || plugin.fillerItemsShort > 0) {
+        if (saveManager.get().setupStage == SetupStage.GetFlyers || plugin.fillerItemsShort > 0) {
             panelComponent.getChildren().add(LineComponent.builder()
                     .left("Please go to the Al Kharid flyerer and use the drop-trick to get " + plugin.fillerItemsShort + " more flyers to fill up your inventory.")
                     .build());
@@ -44,6 +53,11 @@ public class CoinboundInfoboxOverlay extends Overlay {
                     .left("You can drop " + Math.abs(plugin.fillerItemsShort) + " flyers as you have too many.")
                     .build());
         }
+
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("Last unlock: " + plugin.getLastUnlockDisplayName())
+                .build());
+
         long currentCoins = plugin.currentCoins;
         int packsBought = plugin.getPackBought();
         int availablePacks = plugin.getAvailablePacksToBuy();

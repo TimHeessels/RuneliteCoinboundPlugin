@@ -24,7 +24,7 @@ public class ProtectionPrayer implements Unlock {
 
     @Override
     public UnlockType getType() {
-        return UnlockType.Clues;
+        return UnlockType.Prayers;
     }
 
     @Override

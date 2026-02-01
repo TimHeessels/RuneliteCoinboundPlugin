@@ -5,6 +5,7 @@ Thanks to CarlOmega for the awesome idea of using items as blocks.
 
 package com.coinboundplugin.enforcement;
 
+import com.coinboundplugin.data.SetupStage;
 import com.google.inject.Inject;
 import com.coinboundplugin.CoinboundPlugin;
 import net.runelite.api.Client;
@@ -96,6 +97,12 @@ public class InventoryBlocker {
     }
 
     private void replaceInventory(Widget w) {
+
+        if (plugin.getSetupStage() == SetupStage.DropAllItems)
+        {
+            plugin.setFillerItemsShortAmount(0);
+            return;
+        }
 
         int fillerId = plugin.replaceItemID;
 

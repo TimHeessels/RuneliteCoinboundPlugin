@@ -30,6 +30,6 @@ public class UnlockPackOption implements PackOption {
 
     @Override
     public void onChosen(CoinboundPlugin plugin) {
-        plugin.unlock(unlock.getId());
+        plugin.unlock(unlock.getId(), unlock.getDisplayName());
     }
 }

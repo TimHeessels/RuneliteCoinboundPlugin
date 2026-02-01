@@ -15,8 +15,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 @Singleton
-public class SpellBookLockOverlay extends Overlay
-{
+public class SpellBookLockOverlay extends Overlay {
     private final Client client;
     private final CoinboundPlugin plugin;
     private static final int LOCK_SPRITE_ID = 1342;
@@ -26,8 +25,7 @@ public class SpellBookLockOverlay extends Overlay
     private BufferedImage lockSprite;
 
     @Inject
-    public SpellBookLockOverlay(Client client, CoinboundPlugin plugin)
-    {
+    public SpellBookLockOverlay(Client client, CoinboundPlugin plugin) {
         this.client = client;
         this.plugin = plugin;
 
@@ -36,29 +34,35 @@ public class SpellBookLockOverlay extends Overlay
         setPriority(OverlayPriority.HIGH);
     }
 
-    private BufferedImage getLockSprite()
-    {
-        if (lockSprite == null)
-        {
+    private BufferedImage getLockSprite() {
+        if (lockSprite == null) {
             lockSprite = spriteManager.getSprite(LOCK_SPRITE_ID, 0);
         }
         return lockSprite;
     }
 
     @Override
-    public Dimension render(Graphics2D g)
-    {
+    public Dimension render(Graphics2D g) {
         BufferedImage lock = getLockSprite();
         if (lock == null)
             return null; // sprite not loaded yet
 
-
+        if (!plugin.isUnlocked("EnchantCrossbow")) {
+            Widget w = client.getWidget(14286858);
+            if (w != null && !w.isHidden())
+                lockWidget(w, g, lock);
+        }
+        if (!plugin.isUnlocked("Enchant")) {
+            Widget w = client.getWidget(14286860);
+            if (w != null && !w.isHidden())
+                lockWidget(w, g, lock);
+        }
         if (!plugin.isUnlocked("SpelbookTeleports")) {
             for (int widgetId : plugin.teleportWidgetIDs) {
                 Widget w = client.getWidget(widgetId);
                 if (w == null || w.isHidden())
                     continue;
-                lockWidget(w,g,lock);
+                lockWidget(w, g, lock);
             }
         }
         if (!plugin.isUnlocked("Alchemy")) {
@@ -66,14 +70,14 @@ public class SpellBookLockOverlay extends Overlay
                 Widget w = client.getWidget(widgetId);
                 if (w == null || w.isHidden())
                     continue;
-                lockWidget(w,g,lock);
+                lockWidget(w, g, lock);
             }
         }
 
         return null;
     }
 
-    void lockWidget(Widget w, Graphics g, BufferedImage lock){
+    void lockWidget(Widget w, Graphics g, BufferedImage lock) {
         Rectangle r = w.getBounds();
         if (r == null || r.width <= 0 || r.height <= 0)
             return;

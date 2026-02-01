@@ -16,7 +16,6 @@ import net.runelite.client.game.ItemManager;
 import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class MenuOptionBlocker {
     @Inject
@@ -29,7 +28,7 @@ public class MenuOptionBlocker {
     private ItemManager itemManager;
 
     List<String> EQUIP_MENU_OPTIONS = Arrays.asList("wield", "wear", "equip", "hold", "ride", "chill");
-    List<String> EAT_MENU_OPTIONS = Arrays.asList("eat", "consume");  //TODO: Check if more needed
+    List<String> EAT_MENU_OPTIONS = Arrays.asList("eat", "consume", "guzzle");  //TODO: Check if more needed
     List<String> POTIONS_MENU_OPTIONS = Arrays.asList("drink"); //TODO: Check if more needed
     List<String> JEWELERY_MENU_OPTIONS = Arrays.asList("necklace", "ring", "amulet", "bracelet");
 
@@ -171,6 +170,24 @@ public class MenuOptionBlocker {
             if (option.contains("activate") && !plugin.isUnlocked("MeleeProtection")) {
                 event.consume();
                 plugin.ShowPluginChat("<col=ff0000><b>Melee protection prayer locked</b></col> Using melee protection prayers is not unlocked yet.", 2394);
+                return;
+            }
+        }
+
+        //Check for enchanting crossbow bolts
+        if (widgetIDInt == 14286858) {
+            if (!plugin.isUnlocked("EnchantCrossbow")) {
+                event.consume();
+                plugin.ShowPluginChat("<col=ff0000><b>Enchanting crossbow bolts locked</b></col> Creating enchanted crossbow bolts is not unlocked yet.", 2394);
+                return;
+            }
+        }
+
+        //Check for enchanting jewelry
+        if (widgetIDInt == 14286860) {
+            if (!plugin.isUnlocked("Enchant")) {
+                event.consume();
+                plugin.ShowPluginChat("<col=ff0000><b>Enchanting items locked</b></col> Creating enchanted jewelry is not unlocked yet.", 2394);
                 return;
             }
         }

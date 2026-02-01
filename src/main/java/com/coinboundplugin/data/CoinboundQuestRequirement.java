@@ -1,4 +1,4 @@
-package com.coinboundplugin;
+package com.coinboundplugin.data;
 
 import com.coinboundplugin.requirements.AppearRequirement;
 import com.coinboundplugin.requirements.UnlockIDRequirement;
