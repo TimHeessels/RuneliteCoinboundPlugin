@@ -27,10 +27,4 @@ public class SaveData
     public Set<String> unlockedIds = new HashSet<>();
 
     public long lastUpdatedEpochMs = 0L;
-
-    public SaveData()
-    {
-        //Initial unlocks
-        unlockedIds.add("SKILL_HITPOINTS"); //Unlock hit points by default as it would suck to unlock a combat skill and still not be able to use it
-    }
 }

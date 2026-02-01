@@ -88,6 +88,9 @@ public class CoinboundPlugin extends Plugin {
     private SkillIconManager skillIconManager;
 
     private final Map<Skill, Integer> previousXp = new EnumMap<>(Skill.class);
+    private final EnumMap<Skill, Integer> previousLevel = new EnumMap<>(Skill.class);
+
+    private Map<Skill, Integer> maxAllowedLevel = new EnumMap<>(Skill.class);
 
     @Inject
     private CoinboundInfoboxOverlay overlay;
@@ -442,7 +445,7 @@ public class CoinboundPlugin extends Plugin {
         equipmentSlotBlocker.refreshAll();
         questBlocker.refreshAll();
         clientThread.invoke(inventoryBlocker::redrawInventory);
-
+        levelCapsDirty = true; //Refreshes the check on level caps for skills
         if (swingPanel != null)
             swingPanel.refresh();
     }
@@ -493,43 +496,85 @@ public class CoinboundPlugin extends Plugin {
 
     @Subscribe
     public void onStatChanged(StatChanged event) {
-        Skill skill = event.getSkill();
+        handleStatChange(event.getSkill(), event.getXp(), event.getLevel());
+    }
 
-        int xp = event.getXp();
-        Integer previous = previousXp.put(skill, xp);
+    @Subscribe
+    public void onCommandExecuted(CommandExecuted event) {
+        if (!event.getCommand().equalsIgnoreCase("coinbound"))
+            return;
+
+        String[] args = event.getArguments();
+        if (args.length == 0) {
+            return;
+        }
+
+        switch (args[0].toLowerCase()) {
+            case "levelup":
+                devSimulateLevelUp(Skill.SAILING);
+                break;
+        }
+    }
+
+    public void devSimulateLevelUp(Skill skill) {
+        int xp = previousXp.getOrDefault(skill, 0) + 1000;
+        int level = previousLevel.getOrDefault(skill, 1) + 1;
+        handleStatChange(skill, xp, level);
+    }
+
+    void handleStatChange(Skill skill, int xp, int level) {
+
+        //Ignore hitpoints (always unlocked)
+        if (skill == Skill.HITPOINTS)
+            return;
+
+        Integer prevXp = previousXp.put(skill, xp);
+        Integer prevLevel = previousLevel.put(skill, level);
 
         Debug(xp + " xp gained in " + skill.getName() + " size: " + previousXp.size());
+
         if (!statsInitialized && previousXp.size() >= EXPECTED_SKILL_COUNT) {
             statsInitialized = true;
+
+            for (Skill s : Skill.values()) {
+                previousLevel.put(s, client.getRealSkillLevel(s));
+            }
+
             if (swingPanel != null) {
                 Debug("Refreshing panel due to login");
                 swingPanel.refresh();
             }
         }
 
-        if (previous == null) {
+        // Ignore first-time entries (maps not seeded yet)
+        if (prevXp == null || prevLevel == null || !statsInitialized)
             return;
-        }
 
-        int delta = xp - previous;
-        if (delta <= 0) {
+        int deltaXp = xp - prevXp;
+        boolean leveledUp = level > prevLevel;
+
+        if (deltaXp <= 0 && !leveledUp)
             return;
-        }
 
-        //Gained XP before account is ready, just ignore the xp I guess
         if (!accountManager.isAccountReady())
             return;
 
-        if (!isSkillUnlocked(skill)) {
-            long newValue = delta + saveManager.get().illegalXPGained;
-
+        //Ignore XP gained crossing level boundaries
+        if (leveledUp) {
+            if (!isSkillBracketUnlockedAtLevel(skill, level)) {
+                ShowPluginChat("<col=ff0000><b>" + skill.getName() + " limit reached!</b></col> Unlock new ranges to continue this skill.", 2394);
+            }
+        } else if (deltaXp > 0 && !isSkillBracketUnlockedAtLevel(skill, level)) {
+            long newValue = deltaXp + saveManager.get().illegalXPGained;
             saveManager.get().illegalXPGained = newValue;
             saveManager.markDirty();
-            ShowPluginChat("<col=ff0000><b>" + skill.getName() + " locked!</b></col> You've earned XP in " + skill.getName() + " but did not have the skill unlocked!", 2394);
+
+            ShowPluginChat("<col=ff0000><b>" + skill.getName() + " locked!</b></col> You've earned XP in a range you haven't unlocked yet!", 2394);
             ShowPluginChat("You now have a total of " + newValue + " illegal XP.", -1);
             return;
         }
     }
+
 
     public long peakCoinsRequiredForPack(int packIndex) {
         double A = 0.45;
@@ -640,9 +685,49 @@ public class CoinboundPlugin extends Plugin {
         return true;
     }
 
-    public boolean isSkillUnlocked(Skill skill) {
-        return saveManager.get().unlockedIds.contains("SKILL_" + skill.name());
+    public boolean isSkillBracketUnlocked(Skill skill) {
+        if (skill == Skill.HITPOINTS)
+            return true;
+        int playerLevel = client.getRealSkillLevel(skill);
+        return isSkillBracketUnlockedAtLevel(skill, playerLevel);
     }
+
+    public boolean isSkillBracketUnlockedAtLevel(Skill skill, int level) {
+        if (skill == Skill.HITPOINTS)
+            return true;
+        int maxAllowedLevelCached = getMaxAllowedLevelCached(skill);
+        Debug("Checking if skill " + skill.getName() + " is unlocked for level " + level + " (max allowed: " + maxAllowedLevelCached + ")");
+        return level <= maxAllowedLevelCached;
+    }
+
+    public int getMaxAllowedLevelCached(Skill skill) {
+        rebuildCapsIfNeeded();
+        return cachedCaps.getOrDefault(skill, 1);
+    }
+
+    private final EnumMap<Skill, Integer> cachedCaps = new EnumMap<>(Skill.class);
+    private boolean levelCapsDirty = true;
+
+    private void rebuildCapsIfNeeded() {
+        if (!levelCapsDirty) return;
+
+        cachedCaps.clear();
+        Set<String> unlocked = saveManager.get().unlockedIds;
+
+        for (Skill skill : Skill.values()) {
+            int cap = 1;
+            for (int end : LEVEL_RANGES) {
+                if (unlocked.contains("SKILL_" + skill.name() + "_" + end))
+                    cap = end - 1;
+            }
+            cachedCaps.put(skill, cap);
+        }
+
+        levelCapsDirty = false;
+    }
+
+    public static final List<Integer> LEVEL_RANGES =
+            List.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 99);
 
     public boolean isUnlocked(String unlockId) {
         Unlock unlock = unlockRegistry.get(unlockId);

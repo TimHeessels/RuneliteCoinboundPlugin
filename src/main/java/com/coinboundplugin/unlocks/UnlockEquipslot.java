@@ -49,10 +49,6 @@ public class UnlockEquipslot implements Unlock {
         return List.of();
     }
 
-    public EquipSlot getSlot() {
-        return slot;
-    }
-
     public enum EquipSlot {
         AMMO("Ammo"),
         AMULET("Amulet"),

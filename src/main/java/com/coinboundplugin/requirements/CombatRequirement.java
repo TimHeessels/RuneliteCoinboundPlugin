@@ -1,6 +1,7 @@
 package com.coinboundplugin.requirements;
 
 import com.coinboundplugin.CoinboundPlugin;
+import net.runelite.api.Skill;
 
 import java.util.Set;
 
@@ -19,9 +20,8 @@ public class CombatRequirement implements AppearRequirement {
             return false;
         if (plugin.getClient().getLocalPlayer().getCombatLevel() > maxCombatLevel)
             return false;
-        return plugin.isUnlocked("SKILL_ATTACK") || plugin.isUnlocked("SKILL_STRENGTH") || plugin.isUnlocked("SKILL_DEFENCE") || plugin.isUnlocked("SKILL_RANGED") || plugin.isUnlocked("SKILL_MAGIC");
+        return plugin.isSkillBracketUnlocked(Skill.ATTACK) || plugin.isSkillBracketUnlocked(Skill.STRENGTH) || plugin.isSkillBracketUnlocked(Skill.DEFENCE) || plugin.isSkillBracketUnlocked(Skill.RANGED) || plugin.isSkillBracketUnlocked(Skill.MAGIC);
     }
-
 
     @Override
     public String getRequiredUnlockTitle() {

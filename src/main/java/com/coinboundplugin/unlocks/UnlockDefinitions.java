@@ -13,6 +13,8 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.coinboundplugin.CoinboundPlugin.LEVEL_RANGES;
+
 public final class UnlockDefinitions {
     private UnlockDefinitions() {
     }
@@ -44,7 +46,7 @@ public final class UnlockDefinitions {
                         "Cast Low/High Alchemy",
                         IconLoader.load("other/Alchemy.png"),
                         "Allows casting the Low and High Alchemy spell.",
-                        List.of(new UnlockIDRequirement("SKILL_" + Skill.MAGIC, registry))
+                        List.of(new MaxSkillLevelUnlocked(Skill.MAGIC, MaxSkillLevelUnlocked.LevelRanges._30, registry))
                 )
         );
         registry.register(
@@ -53,7 +55,7 @@ public final class UnlockDefinitions {
                         "Cast Enchanting items",
                         IconLoader.load("other/Enchant.png"),
                         "Allows enchanting items.",
-                        List.of(new UnlockIDRequirement("SKILL_" + Skill.MAGIC, registry))
+                        List.of(new MaxSkillLevelUnlocked(Skill.MAGIC, MaxSkillLevelUnlocked.LevelRanges._10, registry))
                 )
         );
         registry.register(
@@ -74,7 +76,7 @@ public final class UnlockDefinitions {
                         "Magic protection prayer",
                         IconLoader.load("protection/Magic.png"),
                         "Allows using the magic protection prayer.",
-                        List.of(new UnlockIDRequirement("SKILL_" + Skill.PRAYER, registry))
+                        List.of(new MaxSkillLevelUnlocked(Skill.PRAYER, MaxSkillLevelUnlocked.LevelRanges._40, registry))
                 )
         );
         registry.register(
@@ -83,7 +85,7 @@ public final class UnlockDefinitions {
                         "Range protection prayer",
                         IconLoader.load("protection/Range.png"),
                         "Allows using the range protection prayer.",
-                        List.of(new UnlockIDRequirement("SKILL_" + Skill.PRAYER, registry))
+                        List.of(new MaxSkillLevelUnlocked(Skill.PRAYER, MaxSkillLevelUnlocked.LevelRanges._40, registry))
                 )
         );
         registry.register(
@@ -92,7 +94,7 @@ public final class UnlockDefinitions {
                         "Melee protection prayer",
                         IconLoader.load("protection/Melee.png"),
                         "Allows using the melee protection prayer.",
-                        List.of(new UnlockIDRequirement("SKILL_" + Skill.PRAYER, registry))
+                        List.of(new MaxSkillLevelUnlocked(Skill.PRAYER, MaxSkillLevelUnlocked.LevelRanges._50, registry))
                 )
         );
     }
@@ -104,7 +106,7 @@ public final class UnlockDefinitions {
                         "Eat healing food",
                         IconLoader.load("consumables/food.png"),
                         "Allows you to eat food to restore HP.",
-                        List.of()
+                        List.of(new MaxSkillLevelUnlocked(Skill.COOKING, MaxSkillLevelUnlocked.LevelRanges._30, registry))
                 )
         );
         registry.register(
@@ -113,7 +115,7 @@ public final class UnlockDefinitions {
                         "Drink potions",
                         IconLoader.load("consumables/potions.png"),
                         "Allows drinking potions.",
-                        List.of()
+                        List.of(new MaxSkillLevelUnlocked(Skill.HERBLORE, MaxSkillLevelUnlocked.LevelRanges._30, registry))
                 )
         );
         registry.register(
@@ -122,7 +124,7 @@ public final class UnlockDefinitions {
                         "Restore at altars",
                         IconLoader.load("consumables/altar.png"),
                         "Allows restoring player points at altars.",
-                        List.of(new UnlockIDRequirement("SKILL_" + Skill.MAGIC, registry))
+                        List.of(new MaxSkillLevelUnlocked(Skill.PRAYER, MaxSkillLevelUnlocked.LevelRanges._50, registry))
                 )
         );
         registry.register(
@@ -131,36 +133,84 @@ public final class UnlockDefinitions {
                         "Drink from refreshment pools",
                         IconLoader.load("consumables/pool.png"),
                         "Allows restoring stats at pools.",
-                        List.of()
+                        List.of(new MaxSkillLevelUnlocked(Skill.MAGIC, MaxSkillLevelUnlocked.LevelRanges._50, registry),
+                                new MaxSkillLevelUnlocked(Skill.COOKING, MaxSkillLevelUnlocked.LevelRanges._30, registry),
+                                new MaxSkillLevelUnlocked(Skill.HERBLORE, MaxSkillLevelUnlocked.LevelRanges._30, registry))
                 )
         );
     }
 
     private static void registerTransport(UnlockRegistry registry) {
-        String[][] defs = {
-                {"FairyRings", "Fairy Rings"},
-                {"SpiritTrees", "Spirit Trees"},
-                {"SpelbookTeleports", "Teleport using spells"},
-                {"MinigameTeleports", "Minigame Teleports"},
-                {"CharterShips", "Charter Ships"},
-                {"AgilityShortcuts", "Agility Shortcuts"},
-                {"BalloonTransport", "Balloon Transport"},
-                {"GnomeGliders", "Gnome Gliders"},
-                {"TeleportJewelry", "Teleport Jewelry"},
-                {"Canoes", "Canoes"}
-        };
-
-        for (String[] def : defs) {
-            String id = def[0];
-            String name = def[1];
-            registry.register(new TransportUnlock(
-                    id,
-                    name,
-                    IconLoader.load("transport/" + id + ".png"),
-                    "Allows access to use " + name + " to move around.",
-                    List.of(new MemberRequirement())
-            ));
-        }
+        registry.register(new TransportUnlock(
+                "FairyRings",
+                "Fairy Rings",
+                IconLoader.load("transport/FairyRings.png"),
+                "Allows access to use Fairy Rings to move around.",
+                List.of(new MemberRequirement(), new UnlockIDRequirement("Quests" + Quest.FAIRYTALE_II__CURE_A_QUEEN, registry))
+        ));
+        registry.register(new TransportUnlock(
+                "SpiritTrees",
+                "Spirit Trees",
+                IconLoader.load("transport/SpiritTrees.png"),
+                "Allows access to use Spirit Trees to move around.",
+                List.of(new MemberRequirement(), new UnlockIDRequirement("Quests" + Quest.TREE_GNOME_VILLAGE, registry))
+        ));
+        registry.register(new TransportUnlock(
+                "SpelbookTeleports",
+                "Teleport using spells",
+                IconLoader.load("transport/SpelbookTeleports.png"),
+                "Allows access to use Teleport using spells to move around.",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.MAGIC, MaxSkillLevelUnlocked.LevelRanges._30, registry))
+        ));
+        registry.register(new TransportUnlock(
+                "MinigameTeleports",
+                "Minigame Teleports",
+                IconLoader.load("transport/MinigameTeleports.png"),
+                "Allows access to use Minigame Teleports to move around.",
+                List.of(new MemberRequirement())
+        ));
+        registry.register(new TransportUnlock(
+                "CharterShips",
+                "Charter Ships",
+                IconLoader.load("transport/CharterShips.png"),
+                "Allows access to use Charter Ships to move around.",
+                List.of(new MemberRequirement())
+        ));
+        registry.register(new TransportUnlock(
+                "AgilityShortcuts",
+                "Agility Shortcuts",
+                IconLoader.load("transport/AgilityShortcuts.png"),
+                "Allows access to use Agility Shortcuts to move around.",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.AGILITY, MaxSkillLevelUnlocked.LevelRanges._10, registry))
+        ));
+        registry.register(new TransportUnlock(
+                "BalloonTransport",
+                "Balloon Transport",
+                IconLoader.load("transport/BalloonTransport.png"),
+                "Allows access to use Balloon Transport to move around.",
+                List.of(new MemberRequirement(), new UnlockIDRequirement("Quests" + Quest.ENLIGHTENED_JOURNEY, registry))
+        ));
+        registry.register(new TransportUnlock(
+                "GnomeGliders",
+                "Gnome Gliders",
+                IconLoader.load("transport/GnomeGliders.png"),
+                "Allows access to use Gnome Gliders to move around.",
+                List.of(new MemberRequirement(), new UnlockIDRequirement("Quests" + Quest.THE_GRAND_TREE, registry))
+        ));
+        registry.register(new TransportUnlock(
+                "TeleportJewelry",
+                "Teleport Jewelry",
+                IconLoader.load("transport/TeleportJewelry.png"),
+                "Allows access to use Teleport Jewelry to move around.",
+                List.of(new MemberRequirement(), new UnlockIDRequirement("Enchant", registry))
+        ));
+        registry.register(new TransportUnlock(
+                "Canoes",
+                "Canoes",
+                IconLoader.load("transport/Canoes.png"),
+                "Allows access to use Canoes to move around.",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.WOODCUTTING, MaxSkillLevelUnlocked.LevelRanges._20, registry))
+        ));
     }
 
     static List<Skill> f2pSkills = List.of(
@@ -180,29 +230,23 @@ public final class UnlockDefinitions {
             Skill.FIREMAKING
     );
 
-    private static void registerSkills(
-            UnlockRegistry registry,
-            SkillIconManager skillIconManager
-    ) {
+    private static void registerSkills(UnlockRegistry registry, SkillIconManager skillIconManager) {
+
         for (Skill skill : Skill.values()) {
-            BufferedImage img = skillIconManager.getSkillImage(skill);
+            int previousLevel = 1;
+            for (Integer levelRange : LEVEL_RANGES) {
+                BufferedImage img = skillIconManager.getSkillImage(skill);
 
-            List<AppearRequirement> reqs = new ArrayList<>();
+                List<AppearRequirement> reqs = new ArrayList<>();
+                if (!f2pSkills.contains(skill))
+                    reqs.add(new MemberRequirement());
+                if (previousLevel != 1)
+                    reqs.add(new UnlockIDRequirement("SKILL_" + skill.name() + "_" + previousLevel, registry));
 
-            if (!f2pSkills.contains(skill))
-                reqs.add(new MemberRequirement());
-
-            switch (skill) {
-                case SAILING: //Needs pandemonium quest
-                    reqs.add(new UnlockIDRequirement("Quests" + Quest.PANDEMONIUM, registry));
-                    break;
-                case HERBLORE: //Needs druidic ritual quest
-                    reqs.add(new UnlockIDRequirement("Quests" + Quest.DRUIDIC_RITUAL, registry));
-                    break;
-            }
-
-            if (img != null) {
-                registry.register(new SkillUnlock(skill, skillIconManager, reqs));
+                if (img != null) {
+                    registry.register(new SkillRangeUnlock(skill, previousLevel, levelRange, skillIconManager, reqs));
+                }
+                previousLevel = levelRange;
             }
         }
     }
@@ -254,6 +298,16 @@ public final class UnlockDefinitions {
                 reqs.add(new UnlockIDRequirement(prev.getId(), registry));
 
             reqs.add(new MemberRequirement());
+
+            if (tier == ClueTier.MEDIUM) {
+                reqs.add(new CombatRequirement(10, 126));
+            } else if (tier == ClueTier.HARD) {
+                reqs.add(new CombatRequirement(30, 126));
+            } else if (tier == ClueTier.ELITE) {
+                reqs.add(new CombatRequirement(50, 126));
+            } else if (tier == ClueTier.MASTER) {
+                reqs.add(new CombatRequirement(70, 126));
+            }
 
             registry.register(
                     new ClueUnlock(
@@ -338,13 +392,131 @@ public final class UnlockDefinitions {
                 "Allows access to the Inferno minigame",
                 List.of(new MemberRequirement(), new CombatRequirement(75, 126))));
 
-        //TODO: Add more minigames
-        /*
-        soul wars
-        Skilling minigames from wiki
-        https://oldschool.runescape.wiki/w/Minigames
-        
-         */
+        registry.register(new MinigameUnlock("Archerycompetition", "Archery competition",
+                IconLoader.load("minigames/Archerycompetition.png"),
+                "Allows access to the Archery competition minigame",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.RANGED, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("Blastfurnace", "Blast furnace",
+                IconLoader.load("minigames/Blastfurnace.png"),
+                "Allows access to the Blast furnace competition minigame",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.SMITHING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("BrimhavenAgilityArena", "Brimhaven Agility Arena",
+                IconLoader.load("minigames/BrimhavenAgilityArena.png"),
+                "Allows access to the Brimhaven Agility Arena minigame",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.AGILITY, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("FishingTrawler", "Fishing Trawler",
+                IconLoader.load("minigames/FishingTrawler.png"),
+                "Allows access to the Fishing Trawler minigame",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.FISHING, MaxSkillLevelUnlocked.LevelRanges._20, registry))));
+
+        registry.register(new MinigameUnlock("GiantsFoundry", "Giants' Foundry",
+                IconLoader.load("minigames/GiantsFoundry.png"),
+                "Allows access to the Giants' Foundry minigame",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.SMITHING, MaxSkillLevelUnlocked.LevelRanges._30, registry))));
+
+        registry.register(new MinigameUnlock("GnomeBall", "Gnome Ball",
+                IconLoader.load("minigames/GnomeBall.png"),
+                "Allows access to the Gnome Ball minigame",
+                List.of(new MemberRequirement())));
+
+        registry.register(new MinigameUnlock("GnomeRestaurant", "Gnome Restaurant",
+                IconLoader.load("minigames/GnomeRestaurant.png"),
+                "Allows access to the Gnome Restaurant minigame",
+                List.of(new MemberRequirement())));
+
+        registry.register(new MinigameUnlock("GuardiansOfTheRift", "Guardians of the Rift",
+                IconLoader.load("minigames/GuardiansOfTheRift.png"),
+                "Allows access to the Guardians of the Rift minigame",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.RUNECRAFT, MaxSkillLevelUnlocked.LevelRanges._10, registry),
+                        new MaxSkillLevelUnlocked(Skill.MINING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("HallowedSepulchre", "Hallowed Sepulchre",
+                IconLoader.load("minigames/HallowedSepulchre.png"),
+                "Allows access to the Hallowed Sepulchre minigame",
+                List.of(new MemberRequirement(), new UnlockIDRequirement("Quest"+ Quest.DARKNESS_OF_HALLOWVALE, registry))));
+
+        registry.register(new MinigameUnlock("ImpetuousImpulses", "Impetuous Impulses",
+                IconLoader.load("minigames/ImpetuousImpulses.png"),
+                "Allows access to the Impetuous Impulses minigame",
+                List.of(new MemberRequirement(), new MaxSkillLevelUnlocked(Skill.HUNTER, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("MageTrainingArena", "Mage Training Arena",
+                IconLoader.load("minigames/MageTrainingArena.png"),
+                "Allows access to the Mage Training Arena minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.MAGIC, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("MahoganyHomes", "Mahogany Homes",
+                IconLoader.load("minigames/MahoganyHomes.png"),
+                "Allows access to the Mahogany Homes minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.CONSTRUCTION, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("MasteringMixology", "Mastering Mixology",
+                IconLoader.load("minigames/MasteringMixology.png"),
+                "Allows access to the Mastering Mixology minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.HERBLORE, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("Mess", "Mess",
+                IconLoader.load("minigames/Mess.png"),
+                "Allows access to the Mess minigame",
+                List.of(new MemberRequirement())));
+
+        registry.register(new MinigameUnlock("PyramidPlunder", "Pyramid Plunder",
+                IconLoader.load("minigames/PyramidPlunder.png"),
+                "Allows access to the Pyramid Plunder minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.THIEVING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("RoguesDen", "Rogues' Den",
+                IconLoader.load("minigames/RoguesDen.png"),
+                "Allows access to the Rogues' Den minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.THIEVING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("SorceressGarden", "Sorceress's Garden",
+                IconLoader.load("minigames/SorceressGarden.png"),
+                "Allows access to the Sorceress's Garden minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.THIEVING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("StealingArtefacts", "Stealing artefacts",
+                IconLoader.load("minigames/StealingArtefacts.png"),
+                "Allows access to the Stealing artefacts minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.THIEVING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("TitheFarm", "Tithe Farm",
+                IconLoader.load("minigames/TitheFarm.png"),
+                "Allows access to the Tithe Farm minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.FARMING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("TroubleBrewing", "Trouble Brewing",
+                IconLoader.load("minigames/TroubleBrewing.png"),
+                "Allows access to the Trouble Brewing minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.COOKING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("ValeTotems", "Vale Totems",
+                IconLoader.load("minigames/ValeTotems.png"),
+                "Allows access to the Vale Totems minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.FLETCHING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("VolcanicMine", "Volcanic Mine",
+                IconLoader.load("minigames/VolcanicMine.png"),
+                "Allows access to the Volcanic Mine minigame",
+                List.of(new MemberRequirement(),new MaxSkillLevelUnlocked(Skill.MINING, MaxSkillLevelUnlocked.LevelRanges._10, registry))));
+
+        registry.register(new MinigameUnlock("ShadesOfMortton", "Shades of Mort'ton",
+                IconLoader.load("minigames/ShadesOfMortton.png"),
+                "Allows access to the Shades of Mort'ton minigame",
+                List.of(new MemberRequirement(), new UnlockIDRequirement("Quests"+ Quest.SHADES_OF_MORTTON, registry))));
+
+        registry.register(new MinigameUnlock("TaiBwoWannaiCleanup", "Tai Bwo Wannai Cleanup",
+                IconLoader.load("minigames/TaiBwoWannaiCleanup.png"),
+                "Allows access to the Tai Bwo Wannai Cleanup minigame",
+                List.of(new MemberRequirement(), new UnlockIDRequirement("Quests"+ Quest.TAI_BWO_WANNAI_TRIO, registry))));
+
+        registry.register(new MinigameUnlock("WarriorsGuild", "Warriors' Guild",
+                IconLoader.load("minigames/WarriorsGuild.png"),
+                "Allows access to the Warriors' Guild minigames",
+                List.of(new MemberRequirement(), new CombatRequirement(40, 126))));
     }
 
 

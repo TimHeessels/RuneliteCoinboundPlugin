@@ -76,7 +76,7 @@ public class SkillBlocker {
             return;
         }
 
-        boolean allowed = plugin.isSkillUnlocked(skill);
+        boolean allowed = plugin.isSkillBracketUnlocked(skill);
 
         Widget gray = parent.getChild(GRAY_OVERLAY_CHILD_ID);
         if (gray == null) {

@@ -9,14 +9,18 @@ import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
-public class SkillUnlock implements Unlock {
+public class SkillRangeUnlock implements Unlock {
     private final Skill skill;
     private final ImageUnlockIcon icon;
     private final List<AppearRequirement> requirements;
+    private final int start;
+    private final int end;
 
-    public SkillUnlock(Skill skill, SkillIconManager skillIconManager, List<AppearRequirement> requirements) {
+    public SkillRangeUnlock(Skill skill, int start, int end, SkillIconManager skillIconManager, List<AppearRequirement> requirements) {
         this.skill = skill;
         this.requirements = requirements;
+        this.start = start;
+        this.end = end;
 
         BufferedImage img = skillIconManager.getSkillImage(skill);
 
@@ -34,12 +38,12 @@ public class SkillUnlock implements Unlock {
 
     @Override
     public String getId() {
-        return "SKILL_" + skill.name();
+        return "SKILL_" + skill.name() + "_" + end;
     }
 
     @Override
     public String getDisplayName() {
-        return skill.getName();
+        return skill.getName() + " Levels " + start + "-" + end;
     }
 
     @Override
@@ -49,7 +53,7 @@ public class SkillUnlock implements Unlock {
 
     @Override
     public String getDescription() {
-        return "Unlocks the " + skill.getName() + " skill.";
+        return "Unlocks levels " + start + " to " + end + " of the " + skill.getName() + " skill.";
     }
 
     @Override

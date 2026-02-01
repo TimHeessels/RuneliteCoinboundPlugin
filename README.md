@@ -1,9 +1,17 @@
 # Coinbound game mode
 Everything is locked, gather coins to choose what to unlock next!
-![chooseCard](assets/chooseCard.png)
 
 ## Gameplay
-You start off with next to nothing unlocked (see the full list below). With every new peak wealth reached, you may open a new booster pack of unlock cards and choose one, slowly unlocking the game one unlock at a time.
+You start off with next to nothing unlocked (Full list at the bottom of the page). With every new peak wealth reached, you may open a new booster pack of unlock cards and choose one, slowly unlocking the game one unlock at a time.
+
+![chooseCard](assets/chooseCard.png)
+
+The side panel shows a list of all the things you can unlock and have unlocked so far.
+
+![UnlockList](assets/UnlockList.png)
+
+Some cards can only appear in packs when you reach their requirements.
+![Requirements](assets/Requirements.png)
 
 ### Rules
 * You can only use content that you have unlocked. The plugin will notify you when you try to use locked content as best as it can.
@@ -15,7 +23,7 @@ You start off with next to nothing unlocked (see the full list below). With ever
   * Start with a fresh normal or ultimate ironman account for the full experience.
 
 ## Important note
-The plugin uses al-kharid flyers to block inventory spaces. At the start of the game mode it will ask you to gather a certain amount.
+The plugin uses al-kharid flyers to block inventory spaces. At the start of the game mode (and whenever you carry too little of them) it will ask you to gather a certain amount.
 Once you've collected enough they will turn into locked icons. They cannot be interacted with or dragged, so if you want a different inventory layout, disable the plugin and drag the flyers to the spaces you want.
 
 ![LockedIcon](assets/LockedIcon.png)
@@ -40,6 +48,8 @@ Nearly all of these are enforced by the plugin, meaning you will get a message w
 * Opening clue boxes. (Note, you're allowed to complete the clue scroll, just not open the casket.)
 * Bosses. Unlock each specific boss.
 * High/low level alchemy. (One unlock for both)
+* Crossbow bolt enchanting
+* Enchanting jewelry
 * Using special attacks. (One unlock for all weapons)
 * Transport options. 
   * Fairy Rings
@@ -65,9 +75,9 @@ Nearly all of these are enforced by the plugin, meaning you will get a message w
 ![packavailable](assets/packavailable.png)
 
 ## Credits
-
 Thanks to the following plugins for inspiration and code ideas:
 * [Skill lock](https://github.com/Ventyrian/skill-lock)
 * [Accidental teleport blocker](https://github.com/bielie993-ui/accidental-teleport-blocker.git)
 * [Chance man](https://github.com/ChunkyAtlas/chance-man.git)
 * [Choicer](https://github.com/Attoz/choicer.git)
+* Settled's one inventory game mode for the idea of using flyers as locked icons.
