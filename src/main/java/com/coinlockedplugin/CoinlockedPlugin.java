@@ -7,8 +7,8 @@ import javax.inject.Inject;
 import javax.swing.*;
 
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.coinlockedplugin.save.AccountManager;
 import com.coinlockedplugin.save.SaveManager;
@@ -42,9 +42,7 @@ import net.runelite.client.util.ImageUtil;
 import static net.runelite.client.util.QuantityFormatter.formatNumber;
 
 @Slf4j
-@PluginDescriptor(
-        name = "Coinbound game mode"
-)
+@PluginDescriptor(name = "Coinbound game mode")
 public class CoinlockedPlugin extends Plugin {
     @Inject
     private Client client;
@@ -167,65 +165,65 @@ public class CoinlockedPlugin extends Plugin {
     public int fillerItemsShort;
 
     public boolean isItemBlocked(int itemId) {
-        return false; //TODO: Check if some items need to have a lock icon overlay
+        return false; // TODO: Check if some items need to have a lock icon overlay
     }
 
     public List<Integer> ALCHEMY_WIDGETS = List.of(14286892, 14286869);
     public List<Integer> teleportWidgetIDs = List.of(
             // Normal spellbook
-            14286874, //Lumbridge
-            14286871, //Varrock
-            14286877, //Falador
-            14286879, //House
-            14286882, //Camelot
-            14286884, //Kourend
-            14286889, //Ardougne
-            14286891, //Civitas
-            14286895, //Watchtower
-            14286902, //Trollheim
-            14286905, //Ape atoll
-            14286928, //Boat
+            14286874, // Lumbridge
+            14286871, // Varrock
+            14286877, // Falador
+            14286879, // House
+            14286882, // Camelot
+            14286884, // Kourend
+            14286889, // Ardougne
+            14286891, // Civitas
+            14286895, // Watchtower
+            14286902, // Trollheim
+            14286905, // Ape atoll
+            14286928, // Boat
             // Ancient spellbook
-            14286945, //Paddewwa
-            14286946, //Senntisten
-            14286947, //Kharyrll
-            14286948, //Lassar
-            14286949, //Dareeyak
-            14286950, //Carrallangar
-            14286921, //Target
-            14286951, //Annakarl
-            14286952, //Ghorrock
-            //Lunar spellbook
-            14286961, //Moonclan
-            14286962, //Moonclan group
-            14286997, //ourania
-            14286965, //waterbirth
-            14286966, //waterbrith group
-            14286969, //barbarian
-            14286970, //barbarian group
-            14286973, //khazard
-            14286974,  //khazard group
-            14286981, //fishing guild
-            14286921, //target
-            14286982, //fishing guild group
-            14286984, //catherby
-            14286985,  //catherby group
-            14286987, //ice plateau
-            14286988,  //ice plateau group
-            //Arceuus spellbook
-            14287000, //library
-            14287004, //draynor
-            14287016, //battlefront
-            14287006, //mind altar
-            14287007, //respawn
-            14287008, //salve graveyard
-            14287009, //frankenstrain castle
-            14287010, //west ardy
-            14287011, //harmony
-            14287012, //cemetary
-            14287014, //barrows
-            14286921, //target
-            14287015 //ape atoll dungeon
+            14286945, // Paddewwa
+            14286946, // Senntisten
+            14286947, // Kharyrll
+            14286948, // Lassar
+            14286949, // Dareeyak
+            14286950, // Carrallangar
+            14286921, // Target
+            14286951, // Annakarl
+            14286952, // Ghorrock
+            // Lunar spellbook
+            14286961, // Moonclan
+            14286962, // Moonclan group
+            14286997, // ourania
+            14286965, // waterbirth
+            14286966, // waterbrith group
+            14286969, // barbarian
+            14286970, // barbarian group
+            14286973, // khazard
+            14286974, // khazard group
+            14286981, // fishing guild
+            14286921, // target
+            14286982, // fishing guild group
+            14286984, // catherby
+            14286985, // catherby group
+            14286987, // ice plateau
+            14286988, // ice plateau group
+            // Arceuus spellbook
+            14287000, // library
+            14287004, // draynor
+            14287016, // battlefront
+            14287006, // mind altar
+            14287007, // respawn
+            14287008, // salve graveyard
+            14287009, // frankenstrain castle
+            14287010, // west ardy
+            14287011, // harmony
+            14287012, // cemetary
+            14287014, // barrows
+            14286921, // target
+            14287015 // ape atoll dungeon
     );
 
     @Provides
@@ -235,12 +233,11 @@ public class CoinlockedPlugin extends Plugin {
 
     @Override
     protected void startUp() throws Exception {
-        accountManager.start(accountKey ->
-        {
+        accountManager.start(accountKey -> {
             // swap active save here
             saveManager.onAccountChanged(accountKey);
         });
-        //Setup all unlockable stuff
+        // Setup all unlockable stuff
         unlockRegistry = new UnlockRegistry();
         UnlockDefinitions.registerAll(unlockRegistry, skillIconManager, this);
 
@@ -264,7 +261,7 @@ public class CoinlockedPlugin extends Plugin {
         loadPackOptionsFromConfig();
         RefreshAllBlockers();
 
-        //Build the panel
+        // Build the panel
         swingPanel = new CoinboundPanel(this);
         navButton = NavigationButton.builder()
                 .tooltip("Roguelite")
@@ -302,7 +299,7 @@ public class CoinlockedPlugin extends Plugin {
         skillBlocker.clearAll();
         questBlocker.clearAll();
 
-        //TODO: Clear inventory blocker (it clears on panel switch but still)
+        // TODO: Clear inventory blocker (it clears on panel switch but still)
         clientToolbar.removeNavigation(navButton);
 
         saveManager.flushNow();
@@ -315,8 +312,9 @@ public class CoinlockedPlugin extends Plugin {
             return;
         log.debug("Runelite config changes!");
 
-        //Only refresh all content on actual changes
-        if (Objects.equals(event.getKey(), "packsBought") || Objects.equals(event.getKey(), "unlockedIds") || Objects.equals(event.getKey(), "peakWealth"))
+        // Only refresh all content on actual changes
+        if (Objects.equals(event.getKey(), "packsBought") || Objects.equals(event.getKey(), "unlockedIds")
+                || Objects.equals(event.getKey(), "peakWealth"))
             RefreshAllBlockers();
     }
 
@@ -340,7 +338,9 @@ public class CoinlockedPlugin extends Plugin {
                 if (itemCount < 1) {
                     saveManager.get().setupStage = SetupStage.GetFlyers;
                     saveManager.markDirty();
-                    ShowPluginChat("<col=329114><b>All items dropped! </b></col> Please go to the Al Kharid flyererer and use the drop-trick to get flyers to fill up your inventory.", 3924);
+                    ShowPluginChat(
+                            "<col=329114><b>All items dropped! </b></col> Please go to the Al Kharid flyererer and use the drop-trick to get flyers to fill up your inventory.",
+                            3924);
                 }
             }
             return;
@@ -375,16 +375,14 @@ public class CoinlockedPlugin extends Plugin {
             ShowPluginChat(
                     "<col=329114><b>" + reached + " new brackets reached!</b></col> Latest: "
                             + formatNumber(lastReq) + " gp. You can open new booster packs!",
-                    3924
-            );
+                    3924);
             saveManager.markDirty();
         } else if (reached == 1) {
             saveManager.get().peakWealth = currentCoins;
             ShowPluginChat(
                     "<col=329114><b>New bracket reached!</b></col> "
                             + formatNumber(lastReq) + " gp. You can open new booster pack!",
-                    3924
-            );
+                    3924);
             saveManager.markDirty();
         }
     }
@@ -399,13 +397,35 @@ public class CoinlockedPlugin extends Plugin {
     void SetupCardButtons() {
         int index = 0;
         for (PackOption option : getCurrentPackOptions()) {
-            Unlock unlock = ((UnlockPackOption) option).getUnlock();
-            UnlockIcon icon = unlock.getIcon();
-            BufferedImage image = getBufferedImageFromIcon(icon);
+            BufferedImage image = getOptionImageOrNull(option);
+            if (image == null) {
+                //If there is any unlock not found, refund the pack and reset active option.
+                saveManager.get().packChoiceState = PackChoiceState.NONE;
+                saveManager.get().currentPackOptions = new ArrayList<>();
+                saveManager.get().packsBought--;
+                saveManager.markDirty();
+                return;
+            }
 
-            SetupCardButton(index, option.getDisplayName(), option.getDisplayType(), option.getDescription(), image, option);
+            SetupCardButton(index, option.getDisplayName(), option.getDisplayType(), option.getDescription(), image,
+                    option);
             index++;
         }
+    }
+
+    private BufferedImage getOptionImageOrNull(PackOption option) {
+        if (!(option instanceof UnlockPackOption))
+            return null;
+
+        Unlock unlock = ((UnlockPackOption) option).getUnlock();
+        if (unlock == null)
+            return null;
+
+        UnlockIcon icon = unlock.getIcon();
+        if (icon == null)
+            return null;
+
+        return getBufferedImageFromIcon(icon);
     }
 
     private BufferedImage getBufferedImageFromIcon(UnlockIcon icon) {
@@ -423,8 +443,7 @@ public class CoinlockedPlugin extends Plugin {
                 BufferedImage buffered = new BufferedImage(
                         img.getWidth(null),
                         img.getHeight(null),
-                        BufferedImage.TYPE_INT_ARGB
-                );
+                        BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g = buffered.createGraphics();
                 g.drawImage(img, 0, 0, null);
                 g.dispose();
@@ -434,7 +453,8 @@ public class CoinlockedPlugin extends Plugin {
         return null;
     }
 
-    void SetupCardButton(int buttonIndex, String unlockName, String typeName, String description, BufferedImage image, PackOption option) {
+    void SetupCardButton(int buttonIndex, String unlockName, String typeName, String description, BufferedImage image,
+            PackOption option) {
         cardPickOverlay.setButton(buttonIndex, unlockName, typeName, description, image, () -> {
             clientThread.invoke(() -> onPackOptionSelected(option));
         });
@@ -445,7 +465,7 @@ public class CoinlockedPlugin extends Plugin {
         equipmentSlotBlocker.refreshAll();
         questBlocker.refreshAll();
         clientThread.invoke(inventoryBlocker::redrawInventory);
-        levelCapsDirty = true; //Refreshes the check on level caps for skills
+        levelCapsDirty = true; // Refreshes the check on level caps for skills
         if (swingPanel != null)
             swingPanel.refresh();
     }
@@ -457,6 +477,9 @@ public class CoinlockedPlugin extends Plugin {
 
         Debug("Player was choosing cards, loading from config");
 
+        // Update unlockable list so we know what unlocks are new after selection
+        updateUnlockableList();
+
         if (saveManager.get().packChoiceState != null)
             SetupCardButtons();
     }
@@ -466,7 +489,8 @@ public class CoinlockedPlugin extends Plugin {
             return;
         fillerItemsShort = amount;
         if (fillerItemsShort <= 0 && saveManager.get().setupStage == SetupStage.GetFlyers) {
-            ShowPluginChat("<col=329114><b>Inventory filled! </b></col> You're now 'free' to start your adventure!", 3924);
+            ShowPluginChat("<col=329114><b>Inventory filled! </b></col> You're now 'free' to start your adventure!",
+                    3924);
             saveManager.get().setupStage = SetupStage.SetupComplete;
             saveManager.markDirty();
             RefreshAllBlockers();
@@ -489,7 +513,6 @@ public class CoinlockedPlugin extends Plugin {
 
         return 0;
     }
-
 
     private static final int EXPECTED_SKILL_COUNT = 23;
     public boolean statsInitialized = false;
@@ -524,7 +547,7 @@ public class CoinlockedPlugin extends Plugin {
 
     void handleStatChange(Skill skill, int xp, int level) {
 
-        //Ignore hitpoints (always unlocked)
+        // Ignore hitpoints (always unlocked)
         if (skill == Skill.HITPOINTS)
             return;
 
@@ -559,22 +582,23 @@ public class CoinlockedPlugin extends Plugin {
         if (!accountManager.isAccountReady())
             return;
 
-        //Ignore XP gained crossing level boundaries
+        // Ignore XP gained crossing level boundaries
         if (leveledUp) {
             if (!isSkillBracketUnlockedAtLevel(skill, level)) {
-                ShowPluginChat("<col=ff0000><b>" + skill.getName() + " limit reached!</b></col> Unlock new ranges to continue this skill.", 2394);
+                ShowPluginChat("<col=ff0000><b>" + skill.getName()
+                        + " limit reached!</b></col> Unlock new ranges to continue this skill.", 2394);
             }
         } else if (deltaXp > 0 && !isSkillBracketUnlockedAtLevel(skill, level)) {
             long newValue = deltaXp + saveManager.get().illegalXPGained;
             saveManager.get().illegalXPGained = newValue;
             saveManager.markDirty();
 
-            ShowPluginChat("<col=ff0000><b>" + skill.getName() + " locked!</b></col> You've earned XP in a range you haven't unlocked yet!", 2394);
+            ShowPluginChat("<col=ff0000><b>" + skill.getName()
+                    + " locked!</b></col> You've earned XP in a range you haven't unlocked yet!", 2394);
             ShowPluginChat("You now have a total of " + newValue + " illegal XP.", -1);
             return;
         }
     }
-
 
     public long peakCoinsRequiredForPack(int packIndex) {
         double A = 0.45;
@@ -607,8 +631,7 @@ public class CoinlockedPlugin extends Plugin {
         if (!accountManager.isAccountReady())
             return;
 
-        clientThread.invoke(() ->
-        {
+        clientThread.invoke(() -> {
             if (getAvailablePacksToBuy() < 1)
                 return;
 
@@ -620,7 +643,9 @@ public class CoinlockedPlugin extends Plugin {
             }
 
             if (!generatePackOptions()) {
-                ShowPluginChat("<col=ff0000><b>Cant make a pack!</b></col> There are 3 or less available cards (with requirements met)!", 2394);
+                ShowPluginChat(
+                        "<col=ff0000><b>Cant make a pack!</b></col> There are 3 or less available cards (with requirements met)!",
+                        2394);
                 return;
             }
             PackBoughtSuccess();
@@ -629,9 +654,9 @@ public class CoinlockedPlugin extends Plugin {
 
     private void PackBoughtSuccess() {
 
-        //TEMP: TODO TESTING NEW SAVE SYSTEM
+        // TEMP: TODO TESTING NEW SAVE SYSTEM
         saveManager.get().packsBought++;
-        saveManager.markDirty(); //Mark dirty to save on debounce
+        saveManager.markDirty(); // Mark dirty to save on debounce
 
         // Refresh panel UI
         if (swingPanel != null) {
@@ -642,13 +667,11 @@ public class CoinlockedPlugin extends Plugin {
                 ChatMessageType.GAMEMESSAGE,
                 "",
                 "Bought a pack",
-                null
-        );
+                null);
     }
 
     public void onPackOptionSelected(PackOption option) {
-        clientThread.invoke(() ->
-        {
+        clientThread.invoke(() -> {
             ShowPluginChat("<col=329114><b>" + option.getDisplayName() + " unlocked! </b></col> ", 2308);
             option.onChosen(this);
 
@@ -696,7 +719,8 @@ public class CoinlockedPlugin extends Plugin {
         if (skill == Skill.HITPOINTS)
             return true;
         int maxAllowedLevelCached = getMaxAllowedLevelCached(skill);
-        Debug("Checking if skill " + skill.getName() + " is unlocked for level " + level + " (max allowed: " + maxAllowedLevelCached + ")");
+        Debug("Checking if skill " + skill.getName() + " is unlocked for level " + level + " (max allowed: "
+                + maxAllowedLevelCached + ")");
         return level <= maxAllowedLevelCached;
     }
 
@@ -709,7 +733,8 @@ public class CoinlockedPlugin extends Plugin {
     private boolean levelCapsDirty = true;
 
     private void rebuildCapsIfNeeded() {
-        if (!levelCapsDirty) return;
+        if (!levelCapsDirty)
+            return;
 
         cachedCaps.clear();
         Set<String> unlocked = saveManager.get().unlockedIds;
@@ -726,8 +751,7 @@ public class CoinlockedPlugin extends Plugin {
         levelCapsDirty = false;
     }
 
-    public static final List<Integer> LEVEL_RANGES =
-            List.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 99);
+    public static final List<Integer> LEVEL_RANGES = List.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 99);
 
     public boolean isUnlocked(String unlockId) {
         Unlock unlock = unlockRegistry.get(unlockId);
@@ -757,12 +781,79 @@ public class CoinlockedPlugin extends Plugin {
         if (!accountManager.isAccountReady())
             return false;
         if (saveManager.get().unlockedIds.add(unlockID)) {
+
+            List<Unlock> lastPossibleUnlockables = new ArrayList<>(currentPossibleUnlockables);
+            List<Unlock> lastLockedUnlockables = new ArrayList<>(currentLockedUnlockables);
+            updateUnlockableList(); // Updates both lastPossibleUnlockables and lastLockedUnlockables
+
+            // Build a set of "previously seen" unlock IDs (possible + locked = all known
+            // before)
+            Set<String> previouslyLockedIds = lastLockedUnlockables.stream()
+                    .map(Unlock::getId)
+                    .collect(Collectors.toSet());
+
+            List<Unlock> newlyPossible = currentPossibleUnlockables.stream()
+                    .filter(u -> previouslyLockedIds.contains(u.getId()))
+                    .collect(Collectors.toList());
+
+            String newPossibleString = "";
+            if (newlyPossible.size() == 1)
+                newPossibleString = "A new card can now appear in the booster packs: ";
+            else if (newlyPossible.size() > 1)
+                newPossibleString = newlyPossible.size() + " new cards can now appear in the booster packs: ";
+            ShowPluginChat(newPossibleString, -1);
+            List<String> names = newlyPossible.stream()
+                    .map(Unlock::getDisplayName)
+                    .collect(Collectors.toList());
+            ShowPluginChat(readableListChat(names, "and", 80), -1);
+
             saveManager.get().lastUnlockedName = displayName;
             saveManager.markDirty();
             RefreshAllBlockers();
             return true;
         }
         return false;
+    }
+
+    private static String readableListChat(
+            List<String> items,
+            String conjunction,
+            int maxLength) {
+        if (items.isEmpty())
+            return "";
+
+        StringBuilder sb = new StringBuilder();
+        int countUsed = 0;
+
+        for (int i = 0; i < items.size(); i++) {
+            String item = items.get(i);
+
+            String prefix;
+            if (countUsed == 0) {
+                prefix = item;
+            } else if (countUsed == 1) {
+                prefix = " " + conjunction + " " + item;
+            } else {
+                prefix = ", " + item;
+            }
+
+            if (sb.length() + prefix.length() > maxLength) {
+                break;
+            }
+
+            sb.append(prefix);
+            countUsed++;
+        }
+
+        int remaining = items.size() - countUsed;
+        if (remaining > 0) {
+            String suffix = " " + conjunction + " " + remaining + " more";
+            if (sb.length() + suffix.length() <= maxLength) {
+                sb.append(suffix);
+            }
+        }
+
+        return sb.toString();
     }
 
     public String removeUnlock(String unlockID) {
@@ -786,31 +877,51 @@ public class CoinlockedPlugin extends Plugin {
         return unlock != null ? unlock.getDisplayName() : unlockID;
     }
 
+    List<Unlock> currentPossibleUnlockables = new ArrayList<>();
+    List<Unlock> currentLockedUnlockables = new ArrayList<>();
+
+    void updateUnlockableList() {
+        Set<String> unlocked = saveManager.get().unlockedIds;
+        Map<Boolean, List<Unlock>> parts = unlockRegistry.getAll().stream()
+                .filter(u -> !unlocked.contains(u.getId()))
+                .collect(Collectors.partitioningBy(this::canAppearAsPackOption));
+        currentPossibleUnlockables = parts.get(true);
+        currentLockedUnlockables = parts.get(false);
+    }
+
+    /// Generates 4 cards for the pack with the following rules
+    /// Prefered only from the list of unlockables that meet requirements
+    /// If not enough (<4) add just enough from unlockables that don't meet reqs
+    /// If still not enough, can't generate pack.
     private boolean generatePackOptions() {
-        List<Unlock> locked = unlockRegistry.getAll().stream()
-                .filter(u -> !saveManager.get().unlockedIds.contains(u.getId()))
-                .filter(this::canAppearAsPackOption)
-                .collect(Collectors.toList());
+        updateUnlockableList();
+        List<Unlock> pool = new ArrayList<>(currentPossibleUnlockables);
 
-        Collections.shuffle(locked);
+        // Not enough valid unlocks, add just enough locked unlocks so there are four
+        int needed = 4 - pool.size();
+        if (needed > 0) {
+            Collections.shuffle(currentLockedUnlockables);
+            pool.addAll(currentLockedUnlockables.subList(0, Math.min(needed, currentLockedUnlockables.size())));
+        }
 
-        int optionCount = Math.min(4, locked.size());
+        // Still not enough to make a full pack, return false
+        if (pool.size() < 4)
+            return false;
+
+        Collections.shuffle(pool);
+        int optionCount = Math.min(4, pool.size());
         Set<UnlockType> usedUnlockTypes = new HashSet<>();
 
         saveManager.get().currentPackOptions = new ArrayList<>(optionCount);
         for (int i = 0; i < optionCount; i++) {
-            Unlock unlock = pickUnlockWithDiversityBias(locked, usedUnlockTypes);
+            Unlock unlock = pickUnlockWithDiversityBias(pool, usedUnlockTypes);
             if (unlock == null)
                 break;
 
+            pool.remove(unlock);
             usedUnlockTypes.add(unlock.getType());
             saveManager.get().currentPackOptions.add(new UnlockPackOption(unlock));
         }
-
-        int count = saveManager.get().currentPackOptions.size();
-
-        if (count < 4)
-            return false;
 
         saveManager.get().packChoiceState = PackChoiceState.PACKGENERATED;
         SetupCardButtons();
@@ -839,10 +950,8 @@ public class CoinlockedPlugin extends Plugin {
                 ChatMessageType.ENGINE,
                 "",
                 "[<col=6069df>Roguelite Mode</col>] " + message,
-                null
-        );
+                null);
         if (soundEffect != -1)
             client.playSoundEffect(soundEffect);
     }
 }
-

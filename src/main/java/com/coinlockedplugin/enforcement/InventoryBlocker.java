@@ -130,8 +130,8 @@ public class InventoryBlocker {
                     i.setTargetVerb(null);
                     i.setItemId(ItemID.BANK_FILLER);
                     i.setClickMask(0);
-                    i.setOnDragCompleteListener((Object[]) null);
-                    i.setOnDragListener((Object[]) null);
+                    //i.setOnDragCompleteListener((Object[]) null);
+                    //i.setOnDragListener((Object[]) null);
                     Arrays.fill(Objects.requireNonNull(i.getActions()), "");
                 }
             }
