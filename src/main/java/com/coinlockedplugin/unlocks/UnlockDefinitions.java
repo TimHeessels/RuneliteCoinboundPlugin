@@ -220,7 +220,6 @@ public final class UnlockDefinitions {
             Skill.RANGED,
             Skill.PRAYER,
             Skill.MAGIC,
-            Skill.HITPOINTS,
             Skill.CRAFTING,
             Skill.MINING,
             Skill.SMITHING,
@@ -231,8 +230,9 @@ public final class UnlockDefinitions {
     );
 
     private static void registerSkills(UnlockRegistry registry, SkillIconManager skillIconManager) {
-
         for (Skill skill : Skill.values()) {
+            if (skill == Skill.HITPOINTS) //Hitpoints is unlocked by default
+                continue;
             int previousLevel = 1;
             for (Integer levelRange : LEVEL_RANGES) {
                 BufferedImage img = skillIconManager.getSkillImage(skill);
@@ -518,7 +518,6 @@ public final class UnlockDefinitions {
                 "Allows access to the Warriors' Guild minigames",
                 List.of(new MemberRequirement(), new CombatRequirement(40))));
     }
-
 
     private static void registerShops(UnlockRegistry registry, CoinlockedPlugin plugin) {
         for (ShopCategory category : ShopCategory.values()) {

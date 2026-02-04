@@ -14,13 +14,7 @@ Some cards can only appear in packs when you reach their requirements.
 ![Requirements](assets/Requirements.png)
 
 ### Rules
-* You can only use content that you have unlocked. The plugin will notify you when you try to use locked content as best as it can.
-* Your main progression is through gathering coins. Every time you reach a new peak wealth (you surpass a threshold of total coins in your inventory) you will be able to open a new booster pack and choose an unlock card.
-* You must use the latest unlock as main source of money making. If you for example unlock a shop type, you must use that shop to make money before you can open your next booster pack.
-  * Even if you have multiple packs to open, you must still earn at least 10% towards the next pack before opening the next.
-  * Exceptions to this rule are made for unlocks that don't directly make money, such as quests or if you unlocked something you can't directly use. In that case, continue with the previous money making method.
-* You're free to use any account type (main, iron, uim) to play this game (or even start with an existing account). Keep in mind that a main account would make the game mode significantly easier.
-  * Start with a fresh normal or ultimate ironman account for the full experience.
+![Rules](assets/Rules.png)
 
 ## Important note
 The plugin uses al-kharid flyers to block inventory spaces. At the start of the game mode (and whenever you carry too little of them) it will ask you to gather a certain amount.

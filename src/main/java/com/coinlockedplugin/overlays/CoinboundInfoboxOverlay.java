@@ -1,7 +1,6 @@
 package com.coinlockedplugin.overlays;
 
 import com.coinlockedplugin.CoinlockedPlugin;
-import com.coinlockedplugin.save.SaveManager;
 import com.coinlockedplugin.data.SetupStage;
 import com.google.inject.Inject;
 import net.runelite.client.ui.overlay.Overlay;
@@ -29,8 +28,9 @@ public class CoinboundInfoboxOverlay extends Overlay {
         if (!plugin.getConfig().showOverlay()) {
             return null;
         }
+
         panelComponent.getChildren().clear();
-        panelComponent.setPreferredSize(new Dimension(250, 0));
+        panelComponent.setPreferredSize(new Dimension(220, 0));
 
         //Display welcome message on first launch
         if (plugin.getSetupStage() == SetupStage.DropAllItems) {
@@ -53,7 +53,8 @@ public class CoinboundInfoboxOverlay extends Overlay {
         }
 
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Last unlock: " + plugin.getLastUnlockDisplayName())
+                .left("Last unlock:")
+                .right(plugin.getLastUnlockDisplayName())
                 .build());
 
         long currentCoins = plugin.currentCoins;
@@ -82,6 +83,10 @@ public class CoinboundInfoboxOverlay extends Overlay {
         }
 
         panelComponent.getChildren().add(LineComponent.builder()
+                .left("Peak wealth")
+                .right(plugin.currentPeakWealth + " gp")
+                .build());
+        panelComponent.getChildren().add(LineComponent.builder()
                 .left("Next pack at")
                 .right(next + " gp")
                 .build());
@@ -89,13 +94,14 @@ public class CoinboundInfoboxOverlay extends Overlay {
         panelComponent.getChildren().add(LineComponent.builder().build());
 
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Progress towards next pack")
+                .left("Next pack")
+                        .right((next - plugin.currentPeakWealth) + "gp")
                 .build());
         ProgressBarComponent bar = new ProgressBarComponent();
         bar.setMinimum(0);
         bar.setMaximum(barGoal);
         bar.setValue(barProgress);
-        bar.setPreferredSize(new Dimension(220, 12));
+        bar.setPreferredSize(new Dimension(180, 12));
         if (barProgress >= barGoal)
             bar.setForegroundColor(new Color(0, 170, 0));
         else

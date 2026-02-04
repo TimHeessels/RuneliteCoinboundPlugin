@@ -57,6 +57,7 @@ public class SaveStorage {
 
         safe(() -> data.packChoiceState = gson.fromJson(obj.get("packChoiceState"), PackChoiceState.class));
 
+        safe(() -> data.lastUnlockedName = obj.get("lastUnlockedName").getAsString());
         safe(() -> data.illegalXPGained = obj.get("illegalXPGained").getAsLong());
         safe(() -> data.packsBought = obj.get("packsBought").getAsInt());
         safe(() -> data.peakWealth = obj.get("peakWealth").getAsLong());

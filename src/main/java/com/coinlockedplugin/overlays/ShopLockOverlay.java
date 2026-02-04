@@ -1,6 +1,7 @@
 package com.coinlockedplugin.overlays;
 
 import com.coinlockedplugin.CoinlockedPlugin;
+import com.coinlockedplugin.data.ShopCategory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import net.runelite.api.Client;
@@ -25,9 +26,7 @@ public class ShopLockOverlay extends Overlay
     @Inject private CoinlockedPlugin plugin;
     @Inject
     private SpriteManager spriteManager;
-
-    // Replace with the groupId you logged for normal shops
-    private static final int SHOP_GROUP_ID = 300; // <-- CHANGE THIS
+    private static final int SHOP_GROUP_ID = 300;
 
     private BufferedImage lockSprite;
 
@@ -42,7 +41,7 @@ public class ShopLockOverlay extends Overlay
     @Override
     public Dimension render(Graphics2D g)
     {
-        if (plugin.isUnlocked("Shops"))
+        if (!plugin.activeShopIsBlocked)
             return null;
 
         Widget shopRoot = client.getWidget(SHOP_GROUP_ID, 0);

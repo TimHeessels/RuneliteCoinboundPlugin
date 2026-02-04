@@ -27,6 +27,11 @@ public class CardPickOverlay extends Overlay {
     private static final int PANEL_PADDING = 20;
     private static final int IMAGE_SIZE = 30;
     private static final int HEADER_HEIGHT = 40;
+    private static final int PICKED_GAP_AFTER_HEADER = 10;
+    private static final int PICKED_GAP_AFTER_CARD = 14;
+    private static final int PICKED_UNLOCKED_MAX_LINES = 2;
+    private static final int PICKED_GAP_AFTER_UNLOCKED = 12;
+
 
     private static final Color TYPE_COLOR = new Color(180, 160, 120);
     private static final Color PANEL_FILL = new Color(40, 32, 24, 240);
@@ -49,11 +54,14 @@ public class CardPickOverlay extends Overlay {
     private final String[] buttonDescriptions = new String[4];
     private static final int BOTTOM_AREA_HEIGHT = 30;
 
-    //Animation
+    // Animation
     private long animationStartTime = 0;
-    private static final long CARD_REVEAL_DELAY_MS = 1000; // Time between each card starting
-    private static final long CARD_ANIMATION_DURATION_MS = 400; // Duration of flip animation
+    private static final long CARD_REVEAL_DELAY_MS = 1000;
+    private static final long CARD_ANIMATION_DURATION_MS = 400;
 
+    // Picked state (only show picked card + unlocked message + close button)
+    private Integer pickedIndex = null;
+    private Rectangle closeButtonBounds = null;
 
     @Inject
     public CardPickOverlay(Client client, CoinlockedPlugin plugin, MouseManager mouseManager) {
@@ -71,6 +79,8 @@ public class CardPickOverlay extends Overlay {
         }
         if (index == 0) {
             startAnimation();
+            pickedIndex = null;
+            closeButtonBounds = null;
         }
         buttonLabels[index] = label;
         buttonTypeNames[index] = typeName;
@@ -90,17 +100,50 @@ public class CardPickOverlay extends Overlay {
             buttonDescriptions[i] = null;
             buttonImages[i] = null;
             buttonCallbacks[i] = null;
+            buttonBounds[i] = null;
         }
         animationStartTime = 0;
+
+        pickedIndex = null;
+        closeButtonBounds = null;
+    }
+
+    private void pickCard(int index) {
+        if (pickedIndex != null) {
+            return;
+        }
+        pickedIndex = index;
+
+        // Run original callback once (this does the actual unlock).
+        if (buttonCallbacks[index] != null) {
+            buttonCallbacks[index].run();
+        }
+
+        // Disable other options immediately.
+        for (int i = 0; i < 4; i++) {
+            if (i != index) {
+                buttonBounds[i] = null;
+            }
+        }
+    }
+
+    private boolean isHoveringCloseButton(MouseEvent e) {
+        return pickedIndex != null
+                && closeButtonBounds != null
+                && closeButtonBounds.contains(e.getPoint());
     }
 
     private final MouseAdapter mouseListener = new MouseAdapter() {
         private int getHoveredButtonIndex(MouseEvent e) {
+            if (pickedIndex != null) {
+                return -1;
+            }
             if (plugin.getPackChoiceState() != PackChoiceState.PACKGENERATED) {
                 return -1;
             }
-            if (!plugin.getConfig().showCardMenus())
+            if (!plugin.getConfig().showCardMenus()) {
                 return -1;
+            }
 
             for (int i = 0; i < buttonBounds.length; i++) {
                 if (buttonBounds[i] != null && buttonBounds[i].contains(e.getPoint())) {
@@ -111,8 +154,9 @@ public class CardPickOverlay extends Overlay {
         }
 
         private boolean isHoveringBuyPackButton(MouseEvent e) {
-            if (!plugin.getConfig().showCardMenus())
+            if (!plugin.getConfig().showCardMenus()) {
                 return false;
+            }
             return plugin.getPackChoiceState() == PackChoiceState.NONE
                     && plugin.getAvailablePacksToBuy() > 0
                     && buyPackButtonBounds != null
@@ -121,8 +165,16 @@ public class CardPickOverlay extends Overlay {
 
         @Override
         public MouseEvent mousePressed(MouseEvent e) {
-            if (!plugin.getConfig().showCardMenus())
+            if (!plugin.getConfig().showCardMenus()) {
                 return e;
+            }
+            if (pickedIndex != null) {
+                if (isHoveringCloseButton(e)) {
+                    e.consume();
+                }
+                return e;
+            }
+
             if (getHoveredButtonIndex(e) >= 0 || isHoveringBuyPackButton(e)) {
                 e.consume();
             }
@@ -131,8 +183,18 @@ public class CardPickOverlay extends Overlay {
 
         @Override
         public MouseEvent mouseReleased(MouseEvent e) {
-            if (!plugin.getConfig().showCardMenus())
+            if (!plugin.getConfig().showCardMenus()) {
                 return e;
+            }
+
+            if (pickedIndex != null) {
+                if (isHoveringCloseButton(e)) {
+                    clearButtons();
+                    e.consume();
+                }
+                return e;
+            }
+
             if (isHoveringBuyPackButton(e)) {
                 log.info("Buy Pack button clicked");
                 plugin.onBuyPackClicked();
@@ -141,9 +203,9 @@ public class CardPickOverlay extends Overlay {
             }
 
             int index = getHoveredButtonIndex(e);
-            if (index >= 0 && buttonCallbacks[index] != null) {
+            if (index >= 0) {
                 log.info("Button {} clicked", buttonLabels[index]);
-                buttonCallbacks[index].run();
+                pickCard(index);
                 e.consume();
             }
             return e;
@@ -151,8 +213,15 @@ public class CardPickOverlay extends Overlay {
 
         @Override
         public MouseEvent mouseClicked(MouseEvent e) {
-            if (!plugin.getConfig().showCardMenus())
+            if (!plugin.getConfig().showCardMenus()) {
                 return e;
+            }
+            if (pickedIndex != null) {
+                if (isHoveringCloseButton(e)) {
+                    e.consume();
+                }
+                return e;
+            }
             if (getHoveredButtonIndex(e) >= 0 || isHoveringBuyPackButton(e)) {
                 e.consume();
             }
@@ -161,15 +230,18 @@ public class CardPickOverlay extends Overlay {
 
         @Override
         public MouseEvent mouseDragged(MouseEvent e) {
-            if (!plugin.getConfig().showCardMenus())
+            if (!plugin.getConfig().showCardMenus()) {
                 return e;
+            }
+            if (pickedIndex != null) {
+                return e;
+            }
             if (getHoveredButtonIndex(e) >= 0 || isHoveringBuyPackButton(e)) {
                 e.consume();
             }
             return e;
         }
     };
-
 
     public void start() {
         mouseManager.registerMouseListener(mouseListener);
@@ -178,7 +250,6 @@ public class CardPickOverlay extends Overlay {
     public void stop() {
         mouseManager.unregisterMouseListener(mouseListener);
     }
-
 
     public void startAnimation() {
         animationStartTime = System.currentTimeMillis();
@@ -209,7 +280,7 @@ public class CardPickOverlay extends Overlay {
         int vpY = client.getViewportYOffset();
         int vpWidth = client.getViewportWidth();
 
-        if (plugin.getPackChoiceState() == PackChoiceState.NONE) {
+        if (plugin.getPackChoiceState() == PackChoiceState.NONE && pickedIndex == null) {
             if (plugin.getAvailablePacksToBuy() > 0) {
                 int buyButtonWidth = 120;
                 int buyButtonHeight = 40;
@@ -244,22 +315,8 @@ public class CardPickOverlay extends Overlay {
 
         int panelX = vpX + (vpWidth / 2) - (panelWidth / 2);
         int panelY = vpY + 50;
-        Point mouse = client.getMouseCanvasPosition();
 
-        int panelHeight = BUTTON_SIZE + (PANEL_PADDING * 2) + BOTTOM_AREA_HEIGHT + HEADER_HEIGHT;
-
-        // Find hovered card index
-        int hoveredIndex = -1;
-        for (int i = 0; i < 4; i++) {
-            if (buttonBounds[i] != null && mouse != null && buttonBounds[i].contains(mouse.getX(), mouse.getY())) {
-                float progress = getCardAnimationProgress(i);
-                if (progress >= 1.0f) {
-                    hoveredIndex = i;
-                    break;
-                }
-            }
-        }
-
+        int panelHeight = BUTTON_SIZE + (PANEL_PADDING * 2) + BOTTOM_AREA_HEIGHT + HEADER_HEIGHT + (pickedIndex != null ? 40 : 0);
 
         g.setColor(PANEL_FILL);
         g.fillRoundRect(panelX, panelY, panelWidth, panelHeight, 10, 10);
@@ -268,13 +325,117 @@ public class CardPickOverlay extends Overlay {
         g.setStroke(new BasicStroke(2f));
         g.drawRoundRect(panelX, panelY, panelWidth, panelHeight, 10, 10);
 
-        String headerText = "Choose a new unlock";
+        int buttonStartX = panelX + PANEL_PADDING;
+        Point mouse = client.getMouseCanvasPosition();
+
+        //Header text
+        String headerText = pickedIndex == null ? "Choose a new unlock" : "Your new unlock!";
         g.setColor(TEXT_COLOR);
         g.setFont(new Font("SansSerif", Font.BOLD, 14));
         FontMetrics headerFm = g.getFontMetrics();
         int headerX = panelX + (panelWidth - headerFm.stringWidth(headerText)) / 2;
         int headerY = panelY + PANEL_PADDING + headerFm.getAscent();
         g.drawString(headerText, headerX, headerY);
+
+        // Picked state: center card horizontally, then "Unlocked X", then Close button (all centered).
+        if (pickedIndex != null) {
+            int headerTextHeight = headerFm.getHeight();
+
+// Keep header, but ensure the card starts below it.
+            int contentTopY = panelY + PANEL_PADDING + headerTextHeight + PICKED_GAP_AFTER_HEADER;
+
+            int cardX = panelX + (panelWidth - BUTTON_SIZE) / 2;
+            int cardY = contentTopY;
+
+            int i = pickedIndex;
+
+            buttonBounds[i] = new Rectangle(cardX, cardY, BUTTON_SIZE, BUTTON_SIZE);
+
+// Card (unchanged drawing, just uses new cardY)
+            g.setColor(BUTTON_FILL);
+            g.fillRoundRect(cardX, cardY, BUTTON_SIZE, BUTTON_SIZE, 8, 8);
+
+            g.setColor(BUTTON_BORDER);
+            g.setStroke(new BasicStroke(2f));
+            g.drawRoundRect(cardX, cardY, BUTTON_SIZE, BUTTON_SIZE, 8, 8);
+
+            g.setFont(new Font("SansSerif", Font.BOLD, 10));
+            FontMetrics fm = g.getFontMetrics();
+
+            if (buttonImages[i] != null) {
+                int imgX = cardX + (BUTTON_SIZE - IMAGE_SIZE) / 2;
+                int imgY = cardY + 14;
+                g.drawImage(buttonImages[i], imgX, imgY, IMAGE_SIZE, IMAGE_SIZE, null);
+            }
+
+            if (buttonLabels[i] != null) {
+                g.setColor(TEXT_COLOR);
+                drawWrappedText(
+                        g,
+                        buttonLabels[i],
+                        cardX + (BUTTON_SIZE / 2), // center of the card
+                        cardY + BUTTON_SIZE - 40,
+                        BUTTON_SIZE - 4,
+                        2,                         // maxLines (added)
+                        fm
+                );
+            }
+
+            if (buttonTypeNames[i] != null) {
+                g.setColor(TYPE_COLOR);
+                g.setFont(new Font("SansSerif", Font.PLAIN, 9));
+                FontMetrics typeFm = g.getFontMetrics();
+                int typeX = cardX + (BUTTON_SIZE - typeFm.stringWidth(buttonTypeNames[i])) / 2;
+                int typeY = cardY + BUTTON_SIZE - 6;
+                g.drawString(buttonTypeNames[i], typeX, typeY);
+            }
+
+// Wrapped unlocked text (reserve exactly 2 lines)
+            String unlockedText = plugin.newPossibleUnlocksString;
+
+            g.setColor(TEXT_COLOR);
+            g.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            FontMetrics unlockedFm = g.getFontMetrics();
+
+            int unlockedAreaTopY = cardY + BUTTON_SIZE + PICKED_GAP_AFTER_CARD;
+            int unlockedMaxWidth = panelWidth - (PANEL_PADDING * 2);
+            int centerX = panelX + (panelWidth / 2);
+
+// Draw up to 2 wrapped lines
+            drawWrappedText(g, unlockedText, centerX, unlockedAreaTopY, unlockedMaxWidth, PICKED_UNLOCKED_MAX_LINES, unlockedFm);
+
+// Compute reserved height for 2 lines, even if 1 line is used
+            int unlockedReservedHeight = unlockedFm.getHeight() * PICKED_UNLOCKED_MAX_LINES;
+
+// Close button below reserved unlocked area
+            int closeW = 90;
+            int closeH = 26;
+
+            int closeX = panelX + (panelWidth - closeW) / 2;
+            int closeY = unlockedAreaTopY + unlockedReservedHeight + PICKED_GAP_AFTER_UNLOCKED;
+
+            closeButtonBounds = new Rectangle(closeX, closeY, closeW, closeH);
+
+            boolean closeHovered = mouse != null && closeButtonBounds.contains(mouse.getX(), mouse.getY());
+
+            g.setColor(BUTTON_FILL);
+            g.fillRoundRect(closeX, closeY, closeW, closeH, 8, 8);
+
+            g.setColor(closeHovered ? BUTTON_HOVER : BUTTON_BORDER);
+            g.setStroke(new BasicStroke(2f));
+            g.drawRoundRect(closeX, closeY, closeW, closeH, 8, 8);
+
+            g.setColor(TEXT_COLOR);
+            g.setFont(new Font("SansSerif", Font.BOLD, 11));
+            FontMetrics closeFm = g.getFontMetrics();
+            String closeText = "Close";
+            int closeTextX = closeX + (closeW - closeFm.stringWidth(closeText)) / 2;
+            int closeTextY = closeY + (closeH + closeFm.getAscent()) / 2 - 2;
+            g.drawString(closeText, closeTextX, closeTextY);
+
+            return null;
+        }
+
 
         String leftInfo = "Cards in deck: " + plugin.getPossibleUnlockablesCount();
         String rightInfo = "Restricted cards: " + plugin.getRestrictedUnlockablesCount();
@@ -285,18 +446,19 @@ public class CardPickOverlay extends Overlay {
         g.drawString(leftInfo, leftInfoX, headerY);
         g.drawString(rightInfo, rightInfoX, headerY);
 
-        int buttonStartX = panelX + PANEL_PADDING;
         int buttonY = panelY + PANEL_PADDING + HEADER_HEIGHT;
 
         g.setFont(new Font("SansSerif", Font.BOLD, 10));
         FontMetrics fm = g.getFontMetrics();
 
-        for (int i = 0; i < 4; i++) {
+        int renderStart = 0;
+        int renderEnd = 4;
+
+        for (int i = renderStart; i < renderEnd; i++) {
             int buttonX = buttonStartX + (i * (BUTTON_SIZE + BUTTON_SPACING));
 
             float progress = getCardAnimationProgress(i);
 
-            // Skip if animation hasn't started for this card
             if (progress <= 0.0f) {
                 buttonBounds[i] = null;
                 continue;
@@ -304,30 +466,26 @@ public class CardPickOverlay extends Overlay {
 
             buttonBounds[i] = new Rectangle(buttonX, buttonY, BUTTON_SIZE, BUTTON_SIZE);
 
-            // Calculate flip scale (0->1 flip effect using sine for smooth easing)
-            // First half: scale shrinks, second half: scale grows
             float flipProgress = progress < 0.5f
-                    ? 1.0f - (progress * 2.0f)  // 1.0 -> 0.0
-                    : (progress - 0.5f) * 2.0f; // 0.0 -> 1.0
+                    ? 1.0f - (progress * 2.0f)
+                    : (progress - 0.5f) * 2.0f;
 
-            // Apply easing for smoother animation
             float scaleX = (float) Math.sin(flipProgress * Math.PI / 2);
-            float alpha = Math.min(1.0f, progress * 2.0f); // Fade in during first half
+            float alpha = Math.min(1.0f, progress * 2.0f);
 
-            // Save original transform and composite
             java.awt.geom.AffineTransform originalTransform = g.getTransform();
             Composite originalComposite = g.getComposite();
 
-            // Apply alpha
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 
-            // Apply horizontal scale transform (flip effect)
             int centerX = buttonX + BUTTON_SIZE / 2;
             g.translate(centerX, 0);
             g.scale(scaleX, 1.0);
             g.translate(-centerX, 0);
 
-            boolean hovered = progress >= 1.0f && mouse != null && buttonBounds[i].contains(mouse.getX(), mouse.getY());
+            boolean hovered = progress >= 1.0f
+                    && mouse != null
+                    && buttonBounds[i].contains(mouse.getX(), mouse.getY());
 
             g.setColor(BUTTON_FILL);
             g.fillRoundRect(buttonX, buttonY, BUTTON_SIZE, BUTTON_SIZE, 8, 8);
@@ -336,7 +494,6 @@ public class CardPickOverlay extends Overlay {
             g.setStroke(new BasicStroke(2f));
             g.drawRoundRect(buttonX, buttonY, BUTTON_SIZE, BUTTON_SIZE, 8, 8);
 
-            // Only show content after flip midpoint
             if (progress > 0.5f) {
                 if (buttonImages[i] != null) {
                     int imgX = buttonX + (BUTTON_SIZE - IMAGE_SIZE) / 2;
@@ -344,9 +501,18 @@ public class CardPickOverlay extends Overlay {
                     g.drawImage(buttonImages[i], imgX, imgY, IMAGE_SIZE, IMAGE_SIZE, null);
                 }
 
+
                 if (buttonLabels[i] != null) {
                     g.setColor(TEXT_COLOR);
-                    drawWrappedText(g, buttonLabels[i], buttonX, buttonY + BUTTON_SIZE - 40, BUTTON_SIZE - 4, fm);
+                    drawWrappedText(
+                            g,
+                            buttonLabels[i],
+                            buttonX + (BUTTON_SIZE / 2), // center of the card
+                            buttonY + BUTTON_SIZE - 40,
+                            BUTTON_SIZE - 4,
+                            2,                            // maxLines (added)
+                            fm
+                    );
                 }
 
                 if (buttonTypeNames[i] != null) {
@@ -360,12 +526,24 @@ public class CardPickOverlay extends Overlay {
                 }
             }
 
-            // Restore original state
             g.setTransform(originalTransform);
             g.setComposite(originalComposite);
         }
 
-        // Draw hover description text at bottom of panel
+        // Hover description
+        int hoveredIndex = -1;
+        if (mouse != null) {
+            for (int i = 0; i < 4; i++) {
+                if (buttonBounds[i] != null && buttonBounds[i].contains(mouse.getX(), mouse.getY())) {
+                    float progress = getCardAnimationProgress(i);
+                    if (progress >= 1.0f) {
+                        hoveredIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
         String desc = "Hover over a card to see more information.";
         if (hoveredIndex >= 0 && buttonDescriptions[hoveredIndex] != null) {
             desc = buttonDescriptions[hoveredIndex];
@@ -378,37 +556,54 @@ public class CardPickOverlay extends Overlay {
         int descY = panelY + PANEL_PADDING + HEADER_HEIGHT + BUTTON_SIZE + BOTTOM_AREA_HEIGHT / 2 + descFm.getAscent() / 2;
         g.drawString(desc, descX, descY);
 
+        closeButtonBounds = null;
         return null;
     }
 
-    private void drawWrappedText(Graphics2D g, String text, int x, int y, int maxWidth, FontMetrics fm) {
-        List<String> lines = new ArrayList<>();
-        String[] words = text.split(" ");
-        StringBuilder currentLine = new StringBuilder();
+    private void drawWrappedText(Graphics2D g, String text, int centerX, int yTop, int maxWidth, int maxLines, FontMetrics fm) {
+        if (text == null || text.isBlank() || maxLines <= 0) {
+            return;
+        }
+
+        String[] words = text.trim().split("\\s+");
+        List<String> lines = new ArrayList<>(maxLines);
+        StringBuilder current = new StringBuilder();
 
         for (String word : words) {
-            String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
-            if (fm.stringWidth(testLine) <= maxWidth) {
-                currentLine = new StringBuilder(testLine);
-            } else {
-                if (currentLine.length() > 0) {
-                    lines.add(currentLine.toString());
-                }
-                currentLine = new StringBuilder(word);
+            String candidate = current.length() == 0 ? word : current + " " + word;
+
+            if (fm.stringWidth(candidate) <= maxWidth) {
+                // Keep accumulating words on the current line.
+                current.setLength(0);
+                current.append(candidate);
+                continue;
             }
+
+            // Candidate does not fit: commit current line if present.
+            if (current.length() > 0) {
+                lines.add(current.toString());
+                if (lines.size() >= maxLines) {
+                    break;
+                }
+                current.setLength(0);
+            }
+
+            // Start a new line with this word (even if it alone exceeds maxWidth).
+            current.append(word);
         }
-        if (currentLine.length() > 0) {
-            lines.add(currentLine.toString());
+
+        if (lines.size() < maxLines && current.length() > 0) {
+            lines.add(current.toString());
         }
 
         int lineHeight = fm.getHeight();
-        int totalHeight = lines.size() * lineHeight;
-        int startY = y + (20 - totalHeight) / 2 + fm.getAscent();
+        int y = yTop + fm.getAscent();
 
-        for (String line : lines) {
-            int textX = x + (maxWidth + 4 - fm.stringWidth(line)) / 2;
-            g.drawString(line, textX, startY);
-            startY += lineHeight;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            int x = centerX - (fm.stringWidth(line) / 2);
+            g.drawString(line, x, y);
+            y += lineHeight;
         }
     }
 }

@@ -8,7 +8,6 @@ import javax.swing.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.coinlockedplugin.save.AccountManager;
 import com.coinlockedplugin.save.SaveManager;
@@ -160,11 +159,16 @@ public class CoinlockedPlugin extends Plugin {
 
     public int replaceItemID = ItemID.LEAFLET_DROPPER_FLYER;
     public long currentCoins = 0;
+    public long currentPeakWealth = 0;
     public int fillerItemsShort;
+    public boolean activeShopIsBlocked;
 
     public boolean isItemBlocked(int itemId) {
         return false; // TODO: Check if some items need to have a lock icon overlay
     }
+
+    //Formatted string listing new possible unlocks after an unlock is gained
+    public String newPossibleUnlocksString = "";
 
     public List<Integer> ALCHEMY_WIDGETS = List.of(14286892, 14286869);
     public List<Integer> teleportWidgetIDs = List.of(
@@ -348,7 +352,9 @@ public class CoinlockedPlugin extends Plugin {
             return;
 
         currentCoins = getCoinsInInventory();
-        Debug("Current coins: " + currentCoins);
+
+        if (currentCoins > currentPeakWealth)
+            currentPeakWealth = currentCoins;
 
         long prevPeak = saveManager.get().peakWealth;
         if (currentCoins <= prevPeak)
@@ -753,14 +759,15 @@ public class CoinlockedPlugin extends Plugin {
         if (skill == Skill.HITPOINTS)
             return true;
         int maxAllowedLevelCached = getMaxAllowedLevelCached(skill);
-        Debug("Checking if skill " + skill.getName() + " is unlocked for level " + level + " (max allowed: "
-                + maxAllowedLevelCached + ")");
+        Debug("Skill " + skill.getName() + " level " + level + " max allowed: " + maxAllowedLevelCached);
+        if (maxAllowedLevelCached < 1)
+            return false;
         return level <= maxAllowedLevelCached;
     }
 
     public int getMaxAllowedLevelCached(Skill skill) {
         rebuildCapsIfNeeded();
-        return cachedCaps.getOrDefault(skill, 1);
+        return cachedCaps.getOrDefault(skill, 0);
     }
 
     private final EnumMap<Skill, Integer> cachedCaps = new EnumMap<>(Skill.class);
@@ -774,7 +781,7 @@ public class CoinlockedPlugin extends Plugin {
         Set<String> unlocked = saveManager.get().unlockedIds;
 
         for (Skill skill : Skill.values()) {
-            int cap = 1;
+            int cap = 0;
             for (int end : LEVEL_RANGES) {
                 if (unlocked.contains("SKILL_" + skill.name() + "_" + end))
                     cap = end - 1;
@@ -829,18 +836,21 @@ public class CoinlockedPlugin extends Plugin {
                     .filter(u -> previouslyLockedIds.contains(u.getId()))
                     .collect(Collectors.toList());
 
-            String newPossibleString = "";
+            newPossibleUnlocksString = "";
             if (newlyPossible.size() == 1)
-                newPossibleString = "A new card can now appear in the booster packs: ";
+                newPossibleUnlocksString = "A new card can now appear in the booster packs: ";
             else if (newlyPossible.size() > 1)
-                newPossibleString = newlyPossible.size() + " new cards can now appear in the booster packs: ";
-            if (!newPossibleString.equals("")) {
-                ShowPluginChat(newPossibleString, -1);
+                newPossibleUnlocksString = newlyPossible.size() + " new cards can now appear in the booster packs: ";
+            if (!newPossibleUnlocksString.equals("")) {
+                ShowPluginChat(newPossibleUnlocksString, -1);
                 List<String> names = newlyPossible.stream()
                         .map(Unlock::getDisplayName)
                         .collect(Collectors.toList());
-                ShowPluginChat(readableListChat(names, "and", 80), -1);
-            }
+                String readableList = readableListChat(names);
+                ShowPluginChat(readableList, -1);
+                newPossibleUnlocksString += " " + readableList;
+            } else
+                newPossibleUnlocksString = "This unlock provides no new possible booster pack cards.";
 
             saveManager.get().lastUnlockedName = displayName;
             saveManager.markDirty();
@@ -850,45 +860,62 @@ public class CoinlockedPlugin extends Plugin {
         return false;
     }
 
-    private static String readableListChat(
-            List<String> items,
-            String conjunction,
-            int maxLength) {
-        if (items.isEmpty())
+    private static String readableListChat(List<String> items)
+    {
+        final int maxLength = 80;
+
+        if (items == null)
             return "";
 
-        StringBuilder sb = new StringBuilder();
-        int countUsed = 0;
+        List<String> cleaned = items.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toList());
 
-        for (int i = 0; i < items.size(); i++) {
-            String item = items.get(i);
+        if (cleaned.isEmpty())
+            return "";
 
-            String prefix;
-            if (countUsed == 0) {
-                prefix = item;
-            } else if (countUsed == 1) {
-                prefix = " " + conjunction + " " + item;
-            } else {
-                prefix = ", " + item;
-            }
+        List<String> used = new ArrayList<>();
+        int length = 0;
 
-            if (sb.length() + prefix.length() > maxLength) {
+        for (String item : cleaned)
+        {
+            int extra = used.isEmpty() ? item.length()
+                    : (used.size() == 1 ? 5 : 2) + item.length(); // " and " or ", "
+
+            if (length + extra > maxLength)
                 break;
-            }
 
-            sb.append(prefix);
-            countUsed++;
+            used.add(item);
+            length += extra;
         }
 
-        int remaining = items.size() - countUsed;
-        if (remaining > 0) {
-            String suffix = " " + conjunction + " " + remaining + " more";
-            if (sb.length() + suffix.length() <= maxLength) {
-                sb.append(suffix);
-            }
+        int remaining = cleaned.size() - used.size();
+
+        String result;
+        if (used.size() == 1)
+        {
+            result = used.get(0);
+        }
+        else if (used.size() == 2)
+        {
+            result = used.get(0) + " and " + used.get(1);
+        }
+        else
+        {
+            result = String.join(", ", used.subList(0, used.size() - 1))
+                    + ", and " + used.get(used.size() - 1);
         }
 
-        return sb.toString();
+        if (remaining > 0)
+        {
+            String suffix = " and " + remaining + " more";
+            if (result.length() + suffix.length() <= maxLength)
+                result += suffix;
+        }
+
+        return result;
     }
 
     public String removeUnlock(String unlockID) {

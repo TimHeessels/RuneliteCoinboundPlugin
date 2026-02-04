@@ -38,12 +38,14 @@ public class ShopBlocker {
         ShopCategory category = classifyByShopName(shopName);
 
         if (category == null) {
+            plugin.activeShopIsBlocked = false;
             // Unknown shop → allow
             plugin.ShowPluginChat("<col=ff0000><b>Possibly locked!</b></col> Shop category not recognized by plugin. Check for yourself if this is unlocked.", -1);
             return;
         }
 
-        if (!plugin.isUnlocked(category.name())) {
+        plugin.activeShopIsBlocked = !plugin.isUnlocked(category.name());
+        if (plugin.activeShopIsBlocked) {
             blockShop(category);
         }
     }
@@ -68,7 +70,7 @@ public class ShopBlocker {
     }
 
     private void blockShop(ShopCategory category) {
-        plugin.ShowPluginChat("<col=ff0000><b>"+category.getDisplayName()+" category is locked!</b></col> You have not unlocked access to this shop yet.", 2394);
+        plugin.ShowPluginChat("<col=ff0000><b>" + category.getDisplayName() + " category is locked!</b></col> You have not unlocked access to this shop yet.", 2394);
 
     }
 }
