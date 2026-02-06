@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class CoinboundQuestRequirement {
+public class CoinlockedQuestRequirement {
 
     private static final Map<Quest, Function<UnlockRegistry, List<AppearRequirement>>> QUEST_REQUIREMENTS = new HashMap<>();
 

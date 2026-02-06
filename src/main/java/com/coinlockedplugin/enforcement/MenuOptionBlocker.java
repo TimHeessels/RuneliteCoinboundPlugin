@@ -325,12 +325,12 @@ public class MenuOptionBlocker {
 
         boolean isDirectTeleportOption = false;
         for (String teleportOptions : TELEPORT_OPTIONS) {
-            if (opt.toLowerCase().contains(teleportOptions.toLowerCase())) {
+            if (opt.equalsIgnoreCase(teleportOptions)) {
                 isDirectTeleportOption = true;
                 break;
             }
         }
-        return ((opt.contains("rub") && hasJewelery)) || (target.equals("") && isDirectTeleportOption);
+        return ((opt.contains("rub") && hasJewelery)) || (target.isEmpty() && isDirectTeleportOption);
     }
 
     private boolean isPrayerAltar(String option, String target) {

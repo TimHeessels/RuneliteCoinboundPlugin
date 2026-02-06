@@ -9,6 +9,7 @@ public enum UnlockType
     Clues,
     Bosses,
     Quests,
+    AchievementDiaries,
     Restoration,
     InventorySlots,
     EquipmentSlots,

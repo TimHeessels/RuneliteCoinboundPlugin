@@ -276,9 +276,6 @@ public class CardPickOverlay extends Overlay {
             return null;
         }
 
-        if (isViewportBlockedByInterface())
-            return null;
-
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         int vpX = client.getViewportXOffset();
@@ -601,46 +598,5 @@ public class CardPickOverlay extends Overlay {
             g.drawString(line, x, y);
             y += lineHeight;
         }
-    }
-
-    private boolean isViewportBlockedByInterface() {
-        // Viewport (center game area)
-        final Rectangle viewport = new Rectangle(
-                client.getViewportXOffset(),
-                client.getViewportYOffset(),
-                client.getViewportWidth(),
-                client.getViewportHeight());
-
-        // Skip invalid ones
-        if (viewport.width <= 0 || viewport.height <= 0) {
-            return true;
-        }
-
-        final Widget[] roots = client.getWidgetRoots();
-        if (roots == null) {
-            return false;
-        }
-
-        for (Widget w : roots) {
-            if (w == null || w.isHidden()) {
-                continue;
-            }
-
-            final Rectangle b = w.getBounds();
-            if (b == null || !b.intersects(viewport)) {
-                continue;
-            }
-
-            // How much of the viewport is covered?
-            Rectangle inter = b.intersection(viewport);
-            double covered = (inter.getWidth() * inter.getHeight()) / (viewport.getWidth() * viewport.getHeight());
-
-            // Block card overlay for big interfaces
-            if (covered >= 0.25) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

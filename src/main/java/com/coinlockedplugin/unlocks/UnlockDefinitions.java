@@ -1,7 +1,8 @@
 package com.coinlockedplugin.unlocks;
 
 import com.coinlockedplugin.CoinlockedPlugin;
-import com.coinlockedplugin.data.CoinboundQuestRequirement;
+import com.coinlockedplugin.data.CoinlockedAchievementRequirement;
+import com.coinlockedplugin.data.CoinlockedQuestRequirement;
 import com.coinlockedplugin.data.ClueTier;
 import com.coinlockedplugin.data.ShopCategory;
 import com.coinlockedplugin.requirements.*;
@@ -26,6 +27,7 @@ public final class UnlockDefinitions {
     ) {
 
         registerClueTiers(registry);
+        registerAchievementDiaries(registry);
         registerProtectionPrayers(registry);
         registerOther(registry);
         registerSkills(registry, skillIconManager);
@@ -37,6 +39,32 @@ public final class UnlockDefinitions {
         registerQuests(registry);
         registerEquipmentSlots(registry);
         registerRestoration(registry);
+    }
+
+    private static void registerAchievementDiaries(UnlockRegistry registry) {
+        for (CoinlockedAchievementRequirement.AchievementDiaries diary : CoinlockedAchievementRequirement.AchievementDiaries.values()) {
+            CoinlockedAchievementRequirement.DiaryTier lastTier = null;
+            for (CoinlockedAchievementRequirement.DiaryTier tier : CoinlockedAchievementRequirement.DiaryTier.values()) {
+
+                //Get requirements for this tier diary (empty list if none)
+                List<AppearRequirement> reqs = CoinlockedAchievementRequirement.getRequirementsForDiary(diary,tier, registry);
+                reqs.add(new MemberRequirement());
+
+                if (lastTier != null)
+                    reqs.add(new UnlockIDRequirement("Diary_" + diary.name() + "_" + lastTier.name(), registry));
+                lastTier = tier;
+                String unlockID = "Diary_" + diary.name() + "_" + tier.name();
+                registry.register(
+                        new DiaryUnlock(
+                                unlockID,
+                                lastTier.getDisplayName() + " " + diary.getDisplayName() + " diary",
+                                IconLoader.load("achievement_diaries/" + unlockID + ".png"),
+                                "Allows completing and getting rewards from the " + lastTier.getDisplayName() + " " + diary.getDisplayName() + " achievement diary.",
+                                reqs
+                        )
+                );
+            }
+        }
     }
 
     private static void registerOther(UnlockRegistry registry) {
@@ -275,7 +303,7 @@ public final class UnlockDefinitions {
 
     private static void registerQuests(UnlockRegistry registry) {
         for (Quest quest : Quest.values()) {
-            List<AppearRequirement> reqs = CoinboundQuestRequirement.getRequirementsForQuest(quest, registry);
+            List<AppearRequirement> reqs = CoinlockedQuestRequirement.getRequirementsForQuest(quest, registry);
             if (reqs != null) //Only register quests that have requirements (others are unlocked at the start)
                 registry.register(
                         new QuestUnlock(
