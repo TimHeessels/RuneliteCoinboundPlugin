@@ -52,62 +52,42 @@ public class CoinboundInfoboxOverlay extends Overlay {
                     .build());
         }
 
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("Last unlock:")
-                .right(plugin.getLastUnlockDisplayName())
-                .build());
-
-        long currentCoins = plugin.currentCoins;
-        int packsBought = plugin.getPackBought();
-        int availablePacks = plugin.getAvailablePacksToBuy();
-
-        int targetTier = packsBought + availablePacks + 1;
-
-        long previous = (targetTier <= 1) ? 0 : plugin.peakCoinsRequiredForPack(targetTier - 1);
-        long next = plugin.peakCoinsRequiredForPack(targetTier);
-
-        long barGoal = Math.max(1, next - previous);
-        long barProgress = Math.max(0, currentCoins - previous);
-
-        if (plugin.getAvailablePacksToBuy() > 1) {
+        int availablePacks = plugin.getNewPackAvailableCount();
+        if (availablePacks > 1) {
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("You have " + plugin.getAvailablePacksToBuy() + " packs available to buy! Press the button at the top of the screen to open them.")
+                    .left("You have " + availablePacks + " packs available to buy! Press the button at the top of the screen to open them.")
                     .build());
             panelComponent.getChildren().add(LineComponent.builder().build());
         }
-        if (plugin.getAvailablePacksToBuy() == 1) {
+        if (availablePacks == 1) {
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("You have a pack available to open! Press the button at the top of the screen to open it.")
+                    .left("You have a pack available to buy! Press the button at the top of the screen to buy it.")
                     .build());
             panelComponent.getChildren().add(LineComponent.builder().build());
         }
 
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Peak wealth")
-                .right(plugin.currentPeakWealth + " gp")
+                .left("Current points")
+                .right("Pack cost")
                 .build());
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Next pack at")
-                .right(next + " gp")
+                .left(plugin.getCurrentPoints() + "")
+                .right(plugin.packCost + "")
                 .build());
-
         panelComponent.getChildren().add(LineComponent.builder().build());
 
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("Next pack")
-                        .right((next - plugin.currentPeakWealth) + "gp")
-                .build());
+        int pointsTowardsNextPack = plugin.getCurrentPoints() % plugin.packCost;
+
+        // Progress bar
         ProgressBarComponent bar = new ProgressBarComponent();
         bar.setMinimum(0);
-        bar.setMaximum(barGoal);
-        bar.setValue(barProgress);
-        bar.setPreferredSize(new Dimension(180, 12));
-        if (barProgress >= barGoal)
-            bar.setForegroundColor(new Color(0, 170, 0));
-        else
-            bar.setForegroundColor(new Color(255, 152, 31));
+        bar.setMaximum(plugin.packCost);
+        bar.setValue(pointsTowardsNextPack);
+        bar.setForegroundColor(new Color(80, 200, 120));
+        bar.setBackgroundColor(new Color(40, 40, 40));
 
         panelComponent.getChildren().add(bar);
+
 
         return panelComponent.render(graphics);
     }

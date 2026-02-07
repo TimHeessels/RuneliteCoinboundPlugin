@@ -5,7 +5,6 @@ import com.coinlockedplugin.data.PackChoiceState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
-import net.runelite.api.widgets.Widget;
 import net.runelite.client.input.MouseAdapter;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.ui.overlay.Overlay;
@@ -159,7 +158,7 @@ public class CardPickOverlay extends Overlay {
                 return false;
             }
             return plugin.getPackChoiceState() == PackChoiceState.NONE
-                    && plugin.getAvailablePacksToBuy() > 0
+                    && plugin.getNewPackAvailableCount() > 0
                     && buyPackButtonBounds != null
                     && buyPackButtonBounds.contains(e.getPoint());
         }
@@ -283,7 +282,7 @@ public class CardPickOverlay extends Overlay {
         int vpWidth = client.getViewportWidth();
 
         if (plugin.getPackChoiceState() == PackChoiceState.NONE && pickedIndex == null) {
-            if (plugin.getAvailablePacksToBuy() > 0) {
+            if (plugin.getNewPackAvailableCount() > 0) {
                 int buyButtonWidth = 120;
                 int buyButtonHeight = 40;
                 int buyButtonX = vpX + (vpWidth / 2) - (buyButtonWidth / 2);
@@ -304,7 +303,7 @@ public class CardPickOverlay extends Overlay {
                 g.setColor(TEXT_COLOR);
                 g.setFont(new Font("SansSerif", Font.BOLD, 12));
                 FontMetrics fm = g.getFontMetrics();
-                String text = "Buy Pack (" + plugin.getAvailablePacksToBuy() + ")";
+                String text = "Buy Pack (" + plugin.packCost + " points)";
                 int textX = buyButtonX + (buyButtonWidth - fm.stringWidth(text)) / 2;
                 int textY = buyButtonY + (buyButtonHeight + fm.getAscent()) / 2 - 2;
                 g.drawString(text, textX, textY);
@@ -348,25 +347,24 @@ public class CardPickOverlay extends Overlay {
             int contentTopY = panelY + PANEL_PADDING + headerTextHeight + PICKED_GAP_AFTER_HEADER;
 
             int cardX = panelX + (panelWidth - BUTTON_SIZE) / 2;
-            int cardY = contentTopY;
 
             int i = pickedIndex;
 
-            buttonBounds[i] = new Rectangle(cardX, cardY, BUTTON_SIZE, BUTTON_SIZE);
+            buttonBounds[i] = new Rectangle(cardX, contentTopY, BUTTON_SIZE, BUTTON_SIZE);
 
             g.setColor(BUTTON_FILL);
-            g.fillRoundRect(cardX, cardY, BUTTON_SIZE, BUTTON_SIZE, 8, 8);
+            g.fillRoundRect(cardX, contentTopY, BUTTON_SIZE, BUTTON_SIZE, 8, 8);
 
             g.setColor(BUTTON_BORDER);
             g.setStroke(new BasicStroke(2f));
-            g.drawRoundRect(cardX, cardY, BUTTON_SIZE, BUTTON_SIZE, 8, 8);
+            g.drawRoundRect(cardX, contentTopY, BUTTON_SIZE, BUTTON_SIZE, 8, 8);
 
             g.setFont(new Font("SansSerif", Font.BOLD, 10));
             FontMetrics fm = g.getFontMetrics();
 
             if (buttonImages[i] != null) {
                 int imgX = cardX + (BUTTON_SIZE - IMAGE_SIZE) / 2;
-                int imgY = cardY + 14;
+                int imgY = contentTopY + 14;
                 g.drawImage(buttonImages[i], imgX, imgY, IMAGE_SIZE, IMAGE_SIZE, null);
             }
 
@@ -376,7 +374,7 @@ public class CardPickOverlay extends Overlay {
                         g,
                         buttonLabels[i],
                         cardX + (BUTTON_SIZE / 2),
-                        cardY + BUTTON_SIZE - 40,
+                        contentTopY + BUTTON_SIZE - 40,
                         BUTTON_SIZE - 4,
                         2,
                         fm);
@@ -387,7 +385,7 @@ public class CardPickOverlay extends Overlay {
                 g.setFont(new Font("SansSerif", Font.PLAIN, 9));
                 FontMetrics typeFm = g.getFontMetrics();
                 int typeX = cardX + (BUTTON_SIZE - typeFm.stringWidth(buttonTypeNames[i])) / 2;
-                int typeY = cardY + BUTTON_SIZE - 6;
+                int typeY = contentTopY + BUTTON_SIZE - 6;
                 g.drawString(buttonTypeNames[i], typeX, typeY);
             }
 
@@ -397,7 +395,7 @@ public class CardPickOverlay extends Overlay {
             g.setFont(new Font("SansSerif", Font.PLAIN, 12));
             FontMetrics unlockedFm = g.getFontMetrics();
 
-            int unlockedAreaTopY = cardY + BUTTON_SIZE + PICKED_GAP_AFTER_CARD;
+            int unlockedAreaTopY = contentTopY + BUTTON_SIZE + PICKED_GAP_AFTER_CARD;
             int unlockedMaxWidth = panelWidth - (PANEL_PADDING * 2);
             int centerX = panelX + (panelWidth / 2);
 

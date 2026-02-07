@@ -7,6 +7,7 @@ import javax.inject.Inject;
 import javax.swing.*;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.coinlockedplugin.save.AccountManager;
@@ -153,13 +154,15 @@ public class CoinlockedPlugin extends Plugin {
         return saveManager.get().packsBought;
     }
 
+    public int getCurrentPoints() {
+        return saveManager.get().points;
+    }
+
     public boolean isInMemberWorld() {
         return client.getWorldType().contains(WorldType.MEMBERS);
     }
 
     public int replaceItemID = ItemID.LEAFLET_DROPPER_FLYER;
-    public long currentCoins = 0;
-    public long currentPeakWealth = 0;
     public int fillerItemsShort;
     public boolean activeShopIsBlocked;
 
@@ -169,6 +172,18 @@ public class CoinlockedPlugin extends Plugin {
 
     // Formatted string listing new possible unlocks after an unlock is gained
     public String newPossibleUnlocksString = "";
+
+    //Thanks to c-engineers plugin for the regex patterns to track unlocks from chat messages, I adapted them to my needs
+    private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log:.*");
+    private static final Pattern MUSIC_TRACK_REGEX = Pattern.compile("You have unlocked a new music track:.*");
+    private static final String ACHIEVEMENT_DIARY_STRING = "Your Achievement Diary has been updated.";
+    private static final Pattern COMBAT_TASK_REGEX = Pattern.compile("CA_ID:\\d+\\|Congratulations, you've completed an? \\w+ combat task:.*");
+    private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you've completed a quest:.*");
+    private static final Set<String> PetMessages = Set.of(
+            "You have a funny feeling like you're being followed",
+            "You feel something weird sneaking into your backpack",
+            "You have a funny feeling like you would have been followed"
+    );
 
     public List<Integer> ALCHEMY_WIDGETS = List.of(14286892, 14286869);
     public List<Integer> teleportWidgetIDs = List.of(
@@ -261,6 +276,7 @@ public class CoinlockedPlugin extends Plugin {
         eventBus.register(inventoryBlocker);
         eventBus.register(teleportBlocker);
         overlayManager.add(inventoryFillerTooltip);
+
         RefreshAllBlockers();
 
         // Build the panel
@@ -322,7 +338,6 @@ public class CoinlockedPlugin extends Plugin {
 
     @Subscribe
     public void onItemContainerChanged(ItemContainerChanged event) {
-
         if (!accountManager.isAccountReady())
             return;
 
@@ -347,55 +362,49 @@ public class CoinlockedPlugin extends Plugin {
             }
             return;
         }
-
-        if (saveManager.get().setupStage != SetupStage.SetupComplete)
-            return;
-
-        currentCoins = getCoinsInInventory();
-
-        if (currentCoins > currentPeakWealth)
-            currentPeakWealth = currentCoins;
-
-        long prevPeak = saveManager.get().peakWealth;
-        if (currentCoins <= prevPeak)
-            return;
-
-        int packIndex = getPackBought() + getAvailablePacksToBuy() + 1;
-
-        int reached = 0;
-        long lastReq = 0;
-
-        // count how many thresholds are now reachable
-        while (currentCoins >= (lastReq = peakCoinsRequiredForPack(packIndex))) {
-            // only count ones you haven't already "passed" before
-            if (lastReq > prevPeak)
-                reached++;
-
-            packIndex++;
-        }
-
-        if (reached > 1) {
-            saveManager.get().peakWealth = currentCoins;
-            ShowPluginChat(
-                    "<col=329114><b>" + reached + " new brackets reached!</b></col> Latest: "
-                            + formatNumber(lastReq) + " gp. You can open new booster packs!",
-                    3924);
-            saveManager.markDirty();
-        } else if (reached == 1) {
-            saveManager.get().peakWealth = currentCoins;
-            ShowPluginChat(
-                    "<col=329114><b>New bracket reached!</b></col> "
-                            + formatNumber(lastReq) + " gp. You can open new booster pack!",
-                    3924);
-            saveManager.markDirty();
-        }
     }
 
-    public String getLastUnlockDisplayName() {
-        String returnName = saveManager.get().lastUnlockedName;
-        if (Objects.equals(returnName, ""))
-            return "None";
-        return returnName;
+    @Subscribe
+    public void onChatMessage(ChatMessage event) {
+        if (!accountManager.isAccountReady())
+            return;
+
+        // Only look at game chat style messages
+        ChatMessageType type = event.getType();
+        if (type != ChatMessageType.GAMEMESSAGE
+                && type != ChatMessageType.SPAM
+                && type != ChatMessageType.ENGINE) {
+            return;
+        }
+
+        String msg = event.getMessage();
+        if (msg == null || msg.isBlank())
+            return;
+
+        if (COLLECTION_LOG_ITEM_REGEX.matcher(msg).matches()) {
+            rewardPoint(PointRewards.CollectionLogEntry);
+            return;
+        }
+        if (QUEST_REGEX.matcher(msg).matches()) {
+            rewardPoint(PointRewards.QuestComplete);
+            return;
+        }
+        if (COMBAT_TASK_REGEX.matcher(msg).matches()) {
+            rewardPoint(PointRewards.CombatAchievement);
+            return;
+        }
+        if (MUSIC_TRACK_REGEX.matcher(msg).matches()) {
+            rewardPoint(PointRewards.MusicTrack);
+            return;
+        }
+        if (msg.contains(ACHIEVEMENT_DIARY_STRING)) {
+            rewardPoint(PointRewards.DiaryStep);
+            return;
+        }
+        if (PetMessages.contains(msg)) {
+            rewardPoint(PointRewards.Pet);
+            return;
+        }
     }
 
     void SetupCardButtons() {
@@ -407,9 +416,9 @@ public class CoinlockedPlugin extends Plugin {
                 refundPack();
                 return;
             }
-
-            SetupCardButton(index, option.getDisplayName(), option.getDisplayType(), option.getDescription(), image,
-                    option);
+            cardPickOverlay.setButton(index, option.getDisplayName(), option.getDisplayType(), option.getDescription(), image, () -> {
+                clientThread.invoke(() -> onPackOptionSelected(option));
+            });
             index++;
         }
     }
@@ -463,13 +472,6 @@ public class CoinlockedPlugin extends Plugin {
             }
         }
         return null;
-    }
-
-    void SetupCardButton(int buttonIndex, String unlockName, String typeName, String description, BufferedImage image,
-            PackOption option) {
-        cardPickOverlay.setButton(buttonIndex, unlockName, typeName, description, image, () -> {
-            clientThread.invoke(() -> onPackOptionSelected(option));
-        });
     }
 
     private void RefreshAllBlockers() {
@@ -527,23 +529,6 @@ public class CoinlockedPlugin extends Plugin {
             saveManager.markDirty();
             RefreshAllBlockers();
         }
-    }
-
-    public long getCoinsInInventory() {
-        ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
-        Debug("inventory: " + inventory);
-        if (inventory == null) {
-            return 0;
-        }
-
-        for (Item item : inventory.getItems()) {
-            if (item.getId() == ItemID.COINS) {
-                Debug("coins found: ");
-                return item.getQuantity();
-            }
-        }
-
-        return 0;
     }
 
     private static final int EXPECTED_SKILL_COUNT = 23;
@@ -616,6 +601,10 @@ public class CoinlockedPlugin extends Plugin {
 
         // Ignore XP gained crossing level boundaries
         if (leveledUp) {
+            //Give a point for each level up
+            for (int i = 0; i < (level - prevLevel); i++)
+                rewardPoint(PointRewards.LevelUp);
+
             if (!isSkillBracketUnlockedAtLevel(skill, level)) {
                 ShowPluginChat("<col=ff0000><b>" + skill.getName()
                         + " limit reached!</b></col> Unlock new ranges to continue this skill.", 2394);
@@ -632,28 +621,10 @@ public class CoinlockedPlugin extends Plugin {
         }
     }
 
-    public long peakCoinsRequiredForPack(int packIndex) {
-        double A = 0.45;
-        double B = 3.1;
-        double C = 6.0;
-
-        return (long) Math.floor(A * Math.pow(packIndex + C, B));
-    }
-
-    public int getTotalUnlockedPacks(long peakCoins) {
-        int pack = 1;
-
-        while (true) {
-            if (peakCoins < peakCoinsRequiredForPack(pack)) {
-                return pack - 1;
-            }
-            pack++;
-        }
-    }
-
-    public int getAvailablePacksToBuy() {
-        int unlocked = getTotalUnlockedPacks(saveManager.get().peakWealth);
-        return Math.max(0, unlocked - saveManager.get().packsBought);
+    public void rewardPoint(PointRewards type) {
+        saveManager.get().points += type.getPoints();
+        saveManager.markDirty();
+        ShowPluginChat("<col=329114><b>Gained " + type.getPoints() + " point(s) </b>" + type.getMessage(), -1);
     }
 
     public int getPossibleUnlockablesCount() {
@@ -672,7 +643,7 @@ public class CoinlockedPlugin extends Plugin {
             return;
 
         clientThread.invoke(() -> {
-            if (getAvailablePacksToBuy() < 1)
+            if (saveManager.get().points < packCost)
                 return;
 
             if (!statsInitialized) {
@@ -721,6 +692,12 @@ public class CoinlockedPlugin extends Plugin {
             saveManager.markDirty();
         });
     }
+
+    public int getNewPackAvailableCount() {
+        return packCost > 0 ? getCurrentPoints() / packCost : 0;
+    }
+
+    public int packCost = 10;
 
     public boolean canAppearAsPackOption(Unlock unlock) {
         if (unlock == null || unlockRegistry == null) {
@@ -852,7 +829,6 @@ public class CoinlockedPlugin extends Plugin {
             } else
                 newPossibleUnlocksString = "This unlock provides no new possible booster pack cards.";
 
-            saveManager.get().lastUnlockedName = displayName;
             saveManager.markDirty();
             RefreshAllBlockers();
             return true;

@@ -20,9 +20,8 @@ public class SaveData {
     // progression
     public long illegalXPGained = 0L;
     public int packsBought = 0;
-    public long peakWealth = 0L;
+    public int points = 0;
 
-    public String lastUnlockedName = "";
     public Set<String> unlockedIds = new HashSet<>();
 
     public long lastUpdatedEpochMs = 0L;

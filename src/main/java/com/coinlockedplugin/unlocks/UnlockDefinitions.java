@@ -324,8 +324,8 @@ public final class UnlockDefinitions {
             ClueTier prev = tier.previous();
             if (prev != null)
                 reqs.add(new UnlockIDRequirement(prev.getId(), registry));
-
-            reqs.add(new MemberRequirement());
+            else
+                reqs.add(new MemberRequirement());
 
             if (tier == ClueTier.MEDIUM) {
                 reqs.add(new CombatRequirement(10));
